@@ -1,5 +1,6 @@
 import React from "react";
-import { Search, Plus, Sparkles, Flame, Moon, Sun } from "lucide-react";
+import { Search, Plus, Sparkles, Flame, Moon, Sun, LogIn, LogOut, Cloud } from "lucide-react";
+import { User } from "firebase/auth";
 import { TabSection } from "../types";
 
 interface HeaderProps {
@@ -11,6 +12,9 @@ interface HeaderProps {
   onOpenPomodoro: () => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
+  currentUser?: User | null;
+  onLogin?: () => void;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,6 +26,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenPomodoro,
   darkMode,
   onToggleDarkMode,
+  currentUser,
+  onLogin,
+  onLogout,
 }) => {
   const titles: Record<TabSection, { title: string; subtitle: string }> = {
     geral: { title: "🏠 Visão Geral Operacional", subtitle: "Resumo diário e próximos prazos" },
@@ -85,6 +92,41 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Flame className="w-4 h-4" />
         </button>
+
+        {/* Firebase Auth Google Sign-In / Account */}
+        {currentUser ? (
+          <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 shrink-0">
+            {currentUser.photoURL ? (
+              <img
+                src={currentUser.photoURL}
+                alt={currentUser.displayName || "User"}
+                className="w-5 h-5 rounded-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <Cloud className="w-4 h-4 text-emerald-500" />
+            )}
+            <span className="hidden sm:inline max-w-[100px] truncate">
+              {currentUser.displayName || currentUser.email || "Conectado"}
+            </span>
+            <button
+              onClick={onLogout}
+              title="Sair da conta Google"
+              className="p-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-lg transition-colors text-emerald-700 dark:text-emerald-300"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={onLogin}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-all shadow-xs shrink-0"
+            title="Entrar com Google para sincronização em nuvem"
+          >
+            <LogIn className="w-4 h-4" />
+            <span className="hidden sm:inline">Entrar com Google</span>
+          </button>
+        )}
 
         {/* Mobile Theme Toggle */}
         <button

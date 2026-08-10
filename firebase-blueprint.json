@@ -1,0 +1,47 @@
+{
+  "entities": {
+    "userData": {
+      "title": "UserData",
+      "description": "User academic dashboard state",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "disciplinas": {
+          "type": "array"
+        },
+        "aulas": {
+          "type": "array"
+        },
+        "trabalhos": {
+          "type": "array"
+        },
+        "provas": {
+          "type": "array"
+        },
+        "ementas": {
+          "type": "array"
+        },
+        "horariosAulas": {
+          "type": "array"
+        },
+        "arquivos": {
+          "type": "object"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "userId"
+      ]
+    }
+  },
+  "firestore": {
+    "/user_data/{userId}": {
+      "schema": "userData",
+      "description": "Academic planner data for a specific user"
+    }
+  }
+}

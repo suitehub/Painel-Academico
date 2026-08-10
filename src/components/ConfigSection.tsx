@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Download, Upload, Moon, Sun, RefreshCw, Shield, HardDrive, CheckCircle2, Trash2 } from "lucide-react";
+import { Download, Upload, Moon, Sun, RefreshCw, Shield, HardDrive, CheckCircle2, Trash2, Cloud, LogIn, LogOut, RefreshCw as SyncIcon } from "lucide-react";
+import { User } from "firebase/auth";
 import { AppData } from "../types";
 import { idbGet, idbSet, idbClear } from "../lib/idb";
 import { getInitialData, getEmptyData } from "../lib/storage";
@@ -9,6 +10,11 @@ interface ConfigSectionProps {
   onRestoreData: (data: AppData) => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
+  currentUser?: User | null;
+  onLogin?: () => void;
+  onLogout?: () => void;
+  onManualSync?: () => void;
+  lastSyncTime?: string | null;
 }
 
 export const ConfigSection: React.FC<ConfigSectionProps> = ({
@@ -16,6 +22,11 @@ export const ConfigSection: React.FC<ConfigSectionProps> = ({
   onRestoreData,
   darkMode,
   onToggleDarkMode,
+  currentUser,
+  onLogin,
+  onLogout,
+  onManualSync,
+  lastSyncTime,
 }) => {
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -157,6 +168,91 @@ export const ConfigSection: React.FC<ConfigSectionProps> = ({
           <span>{statusMsg}</span>
         </div>
       )}
+
+      {/* Firebase Cloud Sync Card */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+              <Cloud className="w-5 h-5 text-indigo-500" /> Sincronização em Nuvem (Firebase Firestore & Auth)
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Conecte sua conta Google para salvar e sincronizar automaticamente suas disciplinas, notas e tarefas no banco de dados seguro do Firebase.
+            </p>
+          </div>
+          {currentUser && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-bold shrink-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Nuvem Ativa
+            </span>
+          )}
+        </div>
+
+        {currentUser ? (
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              {currentUser.photoURL ? (
+                <img
+                  src={currentUser.photoURL}
+                  alt={currentUser.displayName || "User"}
+                  className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
+                  {currentUser.email?.[0].toUpperCase() || "U"}
+                </div>
+              )}
+              <div>
+                <p className="text-xs font-bold text-slate-900 dark:text-white">
+                  {currentUser.displayName || "Usuário Google"}
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {currentUser.email}
+                </p>
+                {lastSyncTime && (
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
+                    Última sincronização: {new Date(lastSyncTime).toLocaleTimeString()}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {onManualSync && (
+                <button
+                  onClick={onManualSync}
+                  className="px-3 py-2 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-300 font-bold rounded-xl text-xs transition-colors border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5"
+                >
+                  <SyncIcon className="w-3.5 h-3.5" /> Sincronizar Agora
+                </button>
+              )}
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Sair
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-xl">
+            <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+              Ainda não conectado. Faça login para manter seus dados seguros na nuvem em tempo real.
+            </span>
+            {onLogin && (
+              <button
+                onClick={onLogin}
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-all shadow-xs flex items-center gap-2 shrink-0"
+              >
+                <LogIn className="w-4 h-4" /> Entrar com Google
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Backup Card */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">

@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
+import { User } from "firebase/auth";
 import { AppData, TabSection, Trabalho, Prova, Disciplina, Aula, Ementa, HorarioAula } from "./types";
 import { loadAppData, saveAppData, clearAllData, getEmptyData } from "./lib/storage";
 import { idbClear } from "./lib/idb";
+import {
+  subscribeToAuth,
+  loginWithGoogle,
+  logoutFirebase,
+  saveUserDataToFirestore,
+  subscribeUserDataFromFirestore,
+} from "./lib/firebase";
 import { Sidebar } from "./components/Sidebar";
 import { BottomNav } from "./components/BottomNav";
 import { Header } from "./components/Header";
@@ -18,17 +26,41 @@ import { PomodoroTimer } from "./components/PomodoroTimer";
 import { QuickAddModal } from "./components/QuickAddModal";
 
 export default function App() {
-  const [appData, setAppData] = useState<AppData>(() => {
-    // Clear previously stored data as requested by user
-    clearAllData();
-    idbClear().catch(() => {});
-    return getEmptyData();
-  });
+  const [appData, setAppData] = useState<AppData>(() => loadAppData());
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState<TabSection>("geral");
   const [searchQuery, setSearchQuery] = useState("");
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     return localStorage.getItem("academic_theme") === "dark";
   });
+
+  // Firebase Auth listener
+  useEffect(() => {
+    const unsubscribeAuth = subscribeToAuth((user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  // Firestore realtime sync when user is logged in
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const unsubscribeDoc = subscribeUserDataFromFirestore(
+      currentUser.uid,
+      (remoteData) => {
+        setAppData(remoteData);
+        saveAppData(remoteData);
+        setLastSyncTime(new Date().toISOString());
+      },
+      (err) => {
+        console.error("Erro ao escutar Firestore:", err);
+      }
+    );
+
+    return () => unsubscribeDoc();
+  }, [currentUser?.uid]);
 
   // Modals state
   const [isAITutorOpen, setIsAITutorOpen] = useState(false);
@@ -68,8 +100,45 @@ export default function App() {
     setAppData((prev) => {
       const next = updater(prev);
       saveAppData(next);
+      if (currentUser) {
+        saveUserDataToFirestore(currentUser.uid, next)
+          .then(() => setLastSyncTime(new Date().toISOString()))
+          .catch((err) => console.error("Erro ao salvar no Firestore:", err));
+      }
       return next;
     });
+  };
+
+  const handleLogin = async () => {
+    try {
+      const user = await loginWithGoogle();
+      if (user) {
+        showToast(`Bem-vindo(a), ${user.displayName || user.email}!`);
+      }
+    } catch (err) {
+      showToast("Falha ao realizar login com o Google.");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutFirebase();
+      showToast("Desconectado da conta Google.");
+    } catch (err) {
+      showToast("Falha ao fazer logout.");
+    }
+  };
+
+  const handleManualSync = async () => {
+    if (currentUser) {
+      try {
+        await saveUserDataToFirestore(currentUser.uid, appData);
+        setLastSyncTime(new Date().toISOString());
+        showToast("Sincronização com o Firebase concluída!");
+      } catch (err) {
+        showToast("Erro ao sincronizar com a nuvem.");
+      }
+    }
   };
 
   // Handlers for Trabalhos
@@ -242,6 +311,9 @@ export default function App() {
           onOpenPomodoro={() => setIsPomodoroOpen(!isPomodoroOpen)}
           darkMode={darkMode}
           onToggleDarkMode={() => setDarkMode(!darkMode)}
+          currentUser={currentUser}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
         />
 
         <main className="flex-1 px-4 md:px-8 py-6 max-w-7xl w-full mx-auto">
@@ -326,6 +398,11 @@ export default function App() {
               onRestoreData={handleRestoreData}
               darkMode={darkMode}
               onToggleDarkMode={() => setDarkMode(!darkMode)}
+              currentUser={currentUser}
+              onLogin={handleLogin}
+              onLogout={handleLogout}
+              onManualSync={handleManualSync}
+              lastSyncTime={lastSyncTime}
             />
           )}
         </main>
