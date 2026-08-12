@@ -15,7 +15,24 @@ import {
   onSnapshot,
   getDocFromServer,
 } from "firebase/firestore";
-import firebaseConfig from "../../firebase-applet-config.json";
+// Safely load firebase-applet-config.json if available without breaking Vite build if missing
+const rawConfigFiles = import.meta.glob<{ default: Record<string, string> }>(
+  "../../firebase-applet-config.json",
+  { eager: true }
+);
+
+const appletConfig = Object.values(rawConfigFiles)[0]?.default || {};
+
+export const firebaseConfig = {
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || appletConfig.projectId || "confirma-ebfc3",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || appletConfig.appId || "1:261676539561:web:b9416709976629f613d3b8",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || appletConfig.apiKey || "AIzaSyBPtNVslidmNWtzgupihOgFk8a5AgAwhA8",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || appletConfig.authDomain || "confirma-ebfc3.firebaseapp.com",
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID || appletConfig.firestoreDatabaseId || "ai-studio-painelacadmico-1fef0d27-e056-4053-af54-b7e3dee6aee6",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || appletConfig.storageBucket || "confirma-ebfc3.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || appletConfig.messagingSenderId || "261676539561",
+};
+
 import { AppData } from "../types";
 
 const app = initializeApp(firebaseConfig);
