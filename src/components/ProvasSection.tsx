@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { AppData, Prova, FiltroTipo, QuizQuestion } from "../types";
 import { todayISO, isWithinNext7Days, isPast, getDueStatus, fmtBR } from "../lib/dateUtils";
+import { callGenerateQuiz } from "../lib/aiService";
 
 interface ProvasSectionProps {
   appData: AppData;
@@ -98,18 +99,11 @@ export const ProvasSection: React.FC<ProvasSectionProps> = ({
     setQuizSubmitted(false);
 
     try {
-      const res = await fetch("/api/ai/generate-quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          topic: prova.titulo,
-          description: prova.descricao || "Tópicos de estudo gerais para a avaliação",
-          count: 3,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erro ao gerar simulado.");
+      const data = await callGenerateQuiz(
+        prova.titulo,
+        prova.descricao || "Tópicos de estudo gerais para a avaliação",
+        3
+      );
       setQuizQuestions(data.questions || []);
     } catch (err: any) {
       alert(`⚠️ Erro ao gerar quiz: ${err.message || "Tente novamente."}`);

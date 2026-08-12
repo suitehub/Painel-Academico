@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Sparkles, Send, Bot, User, Loader2, X, Lightbulb, Check, PlusCircle, Calendar, BookOpen, FileCheck } from "lucide-react";
+import { Sparkles, Send, Bot, User, Loader2, X, Lightbulb, Check, PlusCircle, Key } from "lucide-react";
 import { AppData } from "../types";
+import { callAIAssistant, getStoredGeminiKey, setStoredGeminiKey } from "../lib/aiService";
 
 export interface ExtractedItems {
   trabalhos?: {
@@ -64,6 +65,8 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showKeyModal, setShowKeyModal] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState(getStoredGeminiKey());
 
   if (!isOpen) return null;
 
@@ -73,6 +76,12 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
     "Crie uma rotina diária de estudos eficiente",
     "Qual a melhor técnica para revisar anotações de aulas?",
   ];
+
+  const handleSaveApiKey = () => {
+    setStoredGeminiKey(apiKeyInput);
+    setShowKeyModal(false);
+    alert("Chave API salva com sucesso! Você pode usar o Tutor IA agora.");
+  };
 
   const handleSend = async (promptText?: string) => {
     const query = promptText || input.trim();
@@ -95,14 +104,7 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
           .map((p) => ({ titulo: p.titulo, data: p.data })),
       };
 
-      const res = await fetch("/api/ai/assistant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: query, context: JSON.stringify(context) }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erro na requisição da IA.");
+      const data = await callAIAssistant(query, JSON.stringify(context));
 
       const extracted = data.extractedItems as ExtractedItems;
       const hasExtracted =
@@ -160,12 +162,22 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowKeyModal(true)}
+              className="p-2 text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors flex items-center gap-1.5 text-xs font-bold"
+              title="Configurar Chave da API Gemini"
+            >
+              <Key className="w-4 h-4" />
+              <span className="hidden sm:inline">Chave API</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Quick Suggestion Chips */}
@@ -317,6 +329,58 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
             <Send className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Modal Chave API Gemini (Para GitHub Pages) */}
+        {showKeyModal && (
+          <div className="fixed inset-0 z-60 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h4 className="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                  <Key className="w-5 h-5 text-emerald-500" /> Chave de API do Gemini
+                </h4>
+                <button
+                  onClick={() => setShowKeyModal(false)}
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Em sites estáticos (como o <strong>GitHub Pages</strong>), o backend Node não fica rodando. 
+                Para usar o Tutor IA, informe sua chave gratuita da API do Gemini (obtida gratuitamente no <strong>Google AI Studio</strong>).
+              </p>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Sua Chave (API Key):
+                </label>
+                <input
+                  type="password"
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 font-mono"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setShowKeyModal(false)}
+                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveApiKey}
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-xs"
+                >
+                  Salvar Chave
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

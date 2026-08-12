@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Download, Upload, Moon, Sun, RefreshCw, Shield, HardDrive, CheckCircle2, Trash2, Cloud, LogIn, LogOut, RefreshCw as SyncIcon } from "lucide-react";
+import { Download, Upload, Moon, Sun, RefreshCw, Shield, HardDrive, CheckCircle2, Trash2, Cloud, LogIn, LogOut, RefreshCw as SyncIcon, Key, Sparkles } from "lucide-react";
 import { User } from "firebase/auth";
 import { AppData } from "../types";
 import { idbGet, idbSet, idbClear } from "../lib/idb";
 import { getInitialData, getEmptyData } from "../lib/storage";
+import { getStoredGeminiKey, setStoredGeminiKey } from "../lib/aiService";
 
 interface ConfigSectionProps {
   appData: AppData;
@@ -31,6 +32,14 @@ export const ConfigSection: React.FC<ConfigSectionProps> = ({
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [geminiKeyInput, setGeminiKeyInput] = useState(getStoredGeminiKey());
+  const [savedKeySuccess, setSavedKeySuccess] = useState(false);
+
+  const handleSaveGeminiKey = () => {
+    setStoredGeminiKey(geminiKeyInput);
+    setSavedKeySuccess(true);
+    setTimeout(() => setSavedKeySuccess(false), 3000);
+  };
 
   const fileToDataURL = (file: Blob): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -252,6 +261,42 @@ export const ConfigSection: React.FC<ConfigSectionProps> = ({
             )}
           </div>
         )}
+      </div>
+
+      {/* Gemini API Key Card (Para GitHub Pages / Servidores Estáticos) */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+        <div>
+          <h3 className="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+            <Key className="w-5 h-5 text-emerald-500" /> Configuração da Inteligência Artificial (Gemini API)
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Se estiver usando o site via <strong>GitHub Pages</strong> ou hospedagem estática, insira sua chave da API do Gemini obtida gratuitamente no Google AI Studio.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="password"
+              value={geminiKeyInput}
+              onChange={(e) => setGeminiKeyInput(e.target.value)}
+              placeholder="Cole sua chave aqui (AIzaSy...)"
+              className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 font-mono"
+            />
+            <button
+              onClick={handleSaveGeminiKey}
+              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 shrink-0"
+            >
+              <CheckCircle2 className="w-4 h-4" /> Salvar Chave
+            </button>
+          </div>
+
+          {savedKeySuccess && (
+            <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Chave salva no navegador! As funções de IA estão prontas para uso.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Backup Card */}

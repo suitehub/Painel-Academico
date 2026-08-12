@@ -14,6 +14,7 @@ import {
   Award,
 } from "lucide-react";
 import { AppData, Disciplina, Aula } from "../types";
+import { callSummarizeNotes } from "../lib/aiService";
 
 interface AulasSectionProps {
   appData: AppData;
@@ -43,18 +44,11 @@ export const AulasSection: React.FC<AulasSectionProps> = ({
     setLoadingSummaryId(aula.id);
     try {
       const disc = appData.disciplinas.find((d) => d.id === aula.disciplinaId);
-      const res = await fetch("/api/ai/summarize-notes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: aula.titulo,
-          notes: aula.conteudo,
-          disciplina: disc?.nome || "Geral",
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erro ao resumir.");
+      const data = await callSummarizeNotes(
+        aula.titulo,
+        aula.conteudo,
+        disc?.nome || "Geral"
+      );
 
       setSummaries((prev) => ({ ...prev, [aula.id]: data.summary }));
     } catch (e: any) {

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { AppData, TabSection } from "../types";
 import { todayISO, isWithinNext7Days, isPast, getDueStatus, fmtBR } from "../lib/dateUtils";
+import { callStudyPlan } from "../lib/aiService";
 
 interface GeralSectionProps {
   appData: AppData;
@@ -102,14 +103,7 @@ export const GeralSection: React.FC<GeralSectionProps> = ({
         ...provasAtivas.map((p) => ({ tipo: "Prova", titulo: p.titulo, data: p.data, conteudo: p.descricao })),
       ];
 
-      const res = await fetch("/api/ai/study-plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: itemsToPlan }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erro ao gerar plano.");
+      const data = await callStudyPlan(itemsToPlan);
       setAiPlan(data.plan);
     } catch (e: any) {
       setAiPlan(`⚠️ Não foi possível gerar o plano. ${e.message || ""}`);
