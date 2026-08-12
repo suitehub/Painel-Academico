@@ -476,11 +476,14 @@ export const HorariosSection: React.FC<HorariosSectionProps> = ({
 
         {/* Mobile View Card Grid */}
         <div className="block md:hidden space-y-3">
-          <div className="bg-slate-900 text-white p-3 rounded-xl font-extrabold text-xs text-center uppercase tracking-wider">
-            {DIAS_SEMANA[selectedDayMobile]}
+          <div className="bg-slate-900 text-white p-3 rounded-xl font-extrabold text-xs text-center uppercase tracking-wider flex items-center justify-between">
+            <span>{DIAS_SEMANA[selectedDayMobile]}</span>
+            <span className="text-[10px] text-emerald-400 font-semibold lowercase">
+              (selecione a matéria abaixo)
+            </span>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {FIXED_TIME_SLOTS.map((slot) => {
               if (slot.isBreak) {
                 return (
@@ -491,7 +494,7 @@ export const HorariosSection: React.FC<HorariosSectionProps> = ({
                     <span className="font-mono">{slot.label}</span>
                     <span className="flex items-center gap-1.5 bg-amber-200 dark:bg-amber-900/60 px-2.5 py-1 rounded-full text-[11px]">
                       <Coffee className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                      INTERVALO FIXO
+                      RECREIO FIXO
                     </span>
                   </div>
                 );
@@ -503,44 +506,51 @@ export const HorariosSection: React.FC<HorariosSectionProps> = ({
               return (
                 <div
                   key={slot.id}
-                  className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl flex items-center justify-between gap-3 text-xs"
+                  className="p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl space-y-2 text-xs"
                 >
-                  <div className="font-mono font-bold text-slate-600 dark:text-slate-400 shrink-0">
-                    {slot.label}
+                  {/* Slot Top Header: Time + Discipline Selector */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 font-mono font-bold text-slate-700 dark:text-slate-300 text-[11px]">
+                      <Clock className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <span>{slot.label}</span>
+                    </div>
+
+                    <select
+                      value={disc ? disc.id : 0}
+                      onChange={(e) =>
+                        handleSlotChange(selectedDayMobile, slot, Number(e.target.value))
+                      }
+                      className="max-w-[160px] px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-800 dark:text-slate-200 outline-none truncate"
+                    >
+                      <option value={0}>⚪ Aula Livre</option>
+                      {appData.disciplinas.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.nome}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div className="flex-1">
+                  {/* Slot Main Content Block */}
+                  <div className="w-full min-w-0">
                     {disc ? (
                       <div
-                        className="p-2 rounded-xl text-white font-bold flex items-center justify-between shadow-2xs"
+                        className="p-2.5 rounded-xl text-white font-bold flex items-center justify-between shadow-2xs w-full"
                         style={{ backgroundColor: disc.cor || "#3b82f6" }}
                       >
-                        <span className="truncate">{disc.nome}</span>
-                        <span className="text-[10px] opacity-90 ml-2 font-normal truncate">
-                          {disc.sala || disc.professor || ""}
-                        </span>
+                        <span className="truncate text-xs">{disc.nome}</span>
+                        {(disc.sala || disc.professor) && (
+                          <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded-md font-medium shrink-0 ml-2">
+                            {disc.sala || disc.professor}
+                          </span>
+                        )}
                       </div>
                     ) : (
-                      <span className="text-slate-400 dark:text-slate-500 font-medium italic">
-                        Aula Livre
-                      </span>
+                      <div className="p-2 bg-white/60 dark:bg-slate-900/60 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-center text-slate-400 dark:text-slate-500 font-medium italic text-[11px]">
+                        Aula Livre (Sem aula atribuída)
+                      </div>
                     )}
                   </div>
-
-                  <select
-                    value={disc ? disc.id : 0}
-                    onChange={(e) =>
-                      handleSlotChange(selectedDayMobile, slot, Number(e.target.value))
-                    }
-                    className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-800 dark:text-slate-200 outline-none"
-                  >
-                    <option value={0}>⚪ Aula Livre</option>
-                    {appData.disciplinas.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.nome}
-                      </option>
-                    ))}
-                  </select>
                 </div>
               );
             })}
