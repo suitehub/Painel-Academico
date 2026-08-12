@@ -33,18 +33,83 @@ app.post("/api/ai/assistant", async (req, res) => {
     }
 
     const ai = getGenAI();
-    const systemInstruction = `Você é o Tutor Acadêmico IA do Painel Acadêmico. Seu objetivo é ajudar estudantes com resumos, planos de estudo, tiragem de dúvidas, cronogramas e estratégias de aprendizagem em português do Brasil. Responda de forma clara, estruturada e motivadora, utilizando formatação markdown quando apropriado. Contexto acadêmico atual do aluno: ${context || "Nenhum contexto fornecido."}`;
+    const todayStr = new Date().toISOString().split("T")[0];
+    const systemInstruction = `Você é o Tutor Acadêmico IA do Painel Acadêmico.
+Seu objetivo é orientar estudantes e extrair de forma precisa trabalhos, provas, disciplinas ou anotações mencionados na mensagem.
+A data de hoje é: ${todayStr}.
+
+Contexto acadêmico atual do aluno (disciplinas e tarefas):
+${context || "Nenhum contexto fornecido."}
+
+INSTRUÇÕES DE EXTRAÇÃO AUTOMÁTICA:
+Sempre que a mensagem do aluno contiver dados de trabalhos, provas, disciplinas ou anotações de aula (ex: "Trabalho de Cálculo para dia 25/08 sobre derivadas", "Prova de Física 2 dia 30/08", "Tenho aula de Algoritmos com prof. Carlos"):
+1. Escreva uma resposta explicativa em Markdown no campo "text".
+2. Preencha o objeto "extractedItems" com arrays estruturados para cada item identificado.
+3. Se a disciplina mencionada coincidir com uma das disciplinas do contexto, inclua o "disciplinaId" correspondente. Se for uma matéria nova, inclua o nome em "disciplinaNome".
+4. Resolva datas relativas (ex: "próxima segunda", "amanhã", "dia 20") para o formato YYYY-MM-DD com base na data de hoje (${todayStr}).
+
+Retorne estritamente um JSON com o seguinte formato:
+{
+  "text": "Sua resposta motivadora em Markdown...",
+  "extractedItems": {
+    "trabalhos": [
+      {
+        "titulo": "string",
+        "dataEntrega": "YYYY-MM-DD",
+        "descricao": "string",
+        "disciplinaNome": "string",
+        "disciplinaId": number | null,
+        "peso": number
+      }
+    ],
+    "provas": [
+      {
+        "titulo": "string",
+        "data": "YYYY-MM-DD",
+        "descricao": "string",
+        "disciplinaNome": "string",
+        "disciplinaId": number | null,
+        "peso": number
+      }
+    ],
+    "disciplinas": [
+      {
+        "nome": "string",
+        "codigo": "string",
+        "professor": "string",
+        "sala": "string",
+        "cor": "string"
+      }
+    ],
+    "aulas": [
+      {
+        "titulo": "string",
+        "disciplinaNome": "string",
+        "disciplinaId": number | null,
+        "conteudo": "string",
+        "data": "YYYY-MM-DD"
+      }
+    ]
+  }
+}
+
+Se nenhuma tarefa for mencionada para cadastro, retorne os arrays de "extractedItems" vazios.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3.6-flash",
       contents: prompt,
       config: {
         systemInstruction,
-        temperature: 0.7,
+        responseMimeType: "application/json",
+        temperature: 0.3,
       },
     });
 
-    return res.json({ text: response.text });
+    const parsed = JSON.parse(response.text || "{}");
+    return res.json({
+      text: parsed.text || "Processado com sucesso.",
+      extractedItems: parsed.extractedItems || { trabalhos: [], provas: [], disciplinas: [], aulas: [] },
+    });
   } catch (error: any) {
     console.error("Erro no assistente IA:", error);
     return res.status(500).json({ error: error.message || "Erro interno no servidor de IA." });

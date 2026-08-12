@@ -21,7 +21,7 @@ import { HorariosSection } from "./components/HorariosSection";
 import { CalendarioSection } from "./components/CalendarioSection";
 import { EmentasSection } from "./components/EmentasSection";
 import { ConfigSection } from "./components/ConfigSection";
-import { AITutorModal } from "./components/AITutorModal";
+import { AITutorModal, ExtractedItems } from "./components/AITutorModal";
 import { PomodoroTimer } from "./components/PomodoroTimer";
 import { QuickAddModal } from "./components/QuickAddModal";
 
@@ -273,6 +273,124 @@ export default function App() {
     showToast("Dados restaurados com sucesso!");
   };
 
+  const handleBatchAddItems = (items: ExtractedItems) => {
+    let countTrabalhos = 0;
+    let countProvas = 0;
+    let countDisciplinas = 0;
+    let countAulas = 0;
+
+    updateAppData((prev) => {
+      let currentDisciplinas = [...prev.disciplinas];
+      let currentTrabalhos = [...prev.trabalhos];
+      let currentProvas = [...prev.provas];
+      let currentAulas = [...prev.aulas];
+
+      const getOrCreateDiscId = (discName?: string, discId?: number | null) => {
+        if (discId) {
+          const found = currentDisciplinas.find((d) => d.id === discId);
+          if (found) return found.id;
+        }
+        if (discName) {
+          const foundByName = currentDisciplinas.find(
+            (d) => d.nome.toLowerCase() === discName.toLowerCase()
+          );
+          if (foundByName) return foundByName.id;
+
+          const newId = Date.now() + Math.floor(Math.random() * 1000);
+          const colors = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ec4899", "#06b6d4"];
+          const randomColor = colors[Math.floor(Math.random() * colors.length)];
+          const newDisc: Disciplina = {
+            id: newId,
+            nome: discName,
+            cor: randomColor,
+          };
+          currentDisciplinas.push(newDisc);
+          countDisciplinas++;
+          return newId;
+        }
+        return currentDisciplinas[0]?.id || 101;
+      };
+
+      if (items.disciplinas && items.disciplinas.length > 0) {
+        items.disciplinas.forEach((d) => {
+          const exists = currentDisciplinas.some(
+            (x) => x.nome.toLowerCase() === d.nome.toLowerCase()
+          );
+          if (!exists) {
+            currentDisciplinas.push({
+              id: Date.now() + Math.floor(Math.random() * 1000),
+              nome: d.nome,
+              codigo: d.codigo,
+              professor: d.professor,
+              sala: d.sala,
+              cor: d.cor || "#6366f1",
+            });
+            countDisciplinas++;
+          }
+        });
+      }
+
+      if (items.trabalhos && items.trabalhos.length > 0) {
+        items.trabalhos.forEach((t) => {
+          const dId = getOrCreateDiscId(t.disciplinaNome, t.disciplinaId);
+          currentTrabalhos.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            titulo: t.titulo || "Trabalho Acadêmico",
+            dataEntrega: t.dataEntrega || new Date().toISOString().split("T")[0],
+            descricao: t.descricao || "",
+            concluido: false,
+            disciplinaId: dId,
+            peso: t.peso || 1,
+          });
+          countTrabalhos++;
+        });
+      }
+
+      if (items.provas && items.provas.length > 0) {
+        items.provas.forEach((p) => {
+          const dId = getOrCreateDiscId(p.disciplinaNome, p.disciplinaId);
+          currentProvas.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            titulo: p.titulo || "Prova Acadêmica",
+            data: p.data || new Date().toISOString().split("T")[0],
+            descricao: p.descricao || "",
+            concluido: false,
+            disciplinaId: dId,
+            peso: p.peso || 1,
+          });
+          countProvas++;
+        });
+      }
+
+      if (items.aulas && items.aulas.length > 0) {
+        items.aulas.forEach((a) => {
+          const dId = getOrCreateDiscId(a.disciplinaNome, a.disciplinaId);
+          currentAulas.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            disciplinaId: dId,
+            titulo: a.titulo || "Anotação de Aula",
+            conteudo: a.conteudo || "",
+            data: a.data || new Date().toISOString().split("T")[0],
+          });
+          countAulas++;
+        });
+      }
+
+      return {
+        ...prev,
+        disciplinas: currentDisciplinas,
+        trabalhos: currentTrabalhos,
+        provas: currentProvas,
+        aulas: currentAulas,
+      };
+    });
+
+    const totalAdded = countTrabalhos + countProvas + countDisciplinas + countAulas;
+    if (totalAdded > 0) {
+      showToast(`✨ ${totalAdded} item(ns) adicionado(s) com sucesso ao seu painel!`);
+    }
+  };
+
   const openQuickAddModal = (
     type: "trabalho" | "prova" | "disciplina" | "aula" | "ementa" | "quickSheet" = "quickSheet",
     payload?: any
@@ -430,6 +548,7 @@ export default function App() {
         isOpen={isAITutorOpen}
         onClose={() => setIsAITutorOpen(false)}
         appData={appData}
+        onBatchAddItems={handleBatchAddItems}
       />
     </div>
   );
