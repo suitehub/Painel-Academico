@@ -46,7 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-r border-slate-200/80 dark:border-slate-800 p-4 flex flex-col h-screen sticky top-0 shrink-0 z-30">
+    <aside className="hidden md:flex w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-r border-slate-200/80 dark:border-slate-800 p-4 flex-col h-screen sticky top-0 shrink-0 z-30">
       {/* Brand Header */}
       <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-3.5 rounded-2xl mb-4 shadow-xs">
         <div className="flex items-center gap-2.5">

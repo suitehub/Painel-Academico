@@ -185,82 +185,85 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
           </div>
         </div>
 
-        {/* Days Header */}
-        <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-400 uppercase py-1 border-b border-slate-100 dark:border-slate-800">
-          <div>Dom</div>
-          <div>Seg</div>
-          <div>Ter</div>
-          <div>Qua</div>
-          <div>Qui</div>
-          <div>Sex</div>
-          <div>Sáb</div>
-        </div>
+        {/* Month Grid Outer Container with scrollable wrapper for small phones */}
+        <div className="overflow-x-auto pb-1 scrollbar-none">
+          <div className="min-w-[330px]">
+            {/* Days Header */}
+            <div className="grid grid-cols-7 gap-1 text-center font-bold text-[10px] sm:text-xs text-slate-400 uppercase py-1 border-b border-slate-100 dark:border-slate-800">
+              <div>Dom</div>
+              <div>Seg</div>
+              <div>Ter</div>
+              <div>Qua</div>
+              <div>Qui</div>
+              <div>Sex</div>
+              <div>Sáb</div>
+            </div>
 
-        {/* Month Grid Cells */}
-        <div className="grid grid-cols-7 gap-1.5">
-          {/* Empty cells before month start */}
-          {Array.from({ length: firstDayOfMonth }).map((_, idx) => (
-            <div key={`empty_${idx}`} className="h-20 bg-slate-50/40 dark:bg-slate-800/20 rounded-xl"></div>
-          ))}
+            {/* Month Grid Cells */}
+            <div className="grid grid-cols-7 gap-1 sm:gap-1.5 mt-1">
+              {/* Empty cells before month start */}
+              {Array.from({ length: firstDayOfMonth }).map((_, idx) => (
+                <div key={`empty_${idx}`} className="h-14 sm:h-20 bg-slate-50/40 dark:bg-slate-800/20 rounded-xl"></div>
+              ))}
 
-          {/* Days of Month */}
-          {Array.from({ length: daysInMonth }).map((_, idx) => {
-            const dayNum = idx + 1;
-            const { tList, pList, rList, eList } = getEventsForDay(dayNum);
-            const totalEvents = tList.length + pList.length + rList.length + eList.length;
+              {/* Days of Month */}
+              {Array.from({ length: daysInMonth }).map((_, idx) => {
+                const dayNum = idx + 1;
+                const { tList, pList, rList, eList } = getEventsForDay(dayNum);
+                const totalEvents = tList.length + pList.length + rList.length + eList.length;
 
-            return (
-              <div
-                key={`day_${dayNum}`}
-                className={`h-20 p-1.5 rounded-xl border flex flex-col justify-between transition-all ${
-                  totalEvents > 0
-                    ? "bg-slate-50 dark:bg-slate-800/80 border-slate-300 dark:border-slate-700 shadow-2xs"
-                    : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800/60 text-slate-500"
-                }`}
-              >
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{dayNum}</div>
+                return (
+                  <div
+                    key={`day_${dayNum}`}
+                    className={`h-14 sm:h-20 p-1 sm:p-1.5 rounded-xl border flex flex-col justify-between transition-all ${
+                      totalEvents > 0
+                        ? "bg-slate-50 dark:bg-slate-800/80 border-slate-300 dark:border-slate-700 shadow-2xs"
+                        : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800/60 text-slate-500"
+                    }`}
+                  >
+                    <div className="text-[10px] sm:text-xs font-bold text-slate-800 dark:text-slate-200">{dayNum}</div>
 
-                <div className="space-y-0.5 overflow-hidden">
-                  {tList.slice(0, 1).map((t) => (
-                    <div
-                      key={t.id}
-                      onClick={() => onSelectTab("trabalhos")}
-                      className="bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200 text-[10px] px-1 py-0.5 rounded-md font-bold truncate cursor-pointer hover:opacity-80"
-                      title={`Trabalho: ${t.titulo}`}
-                    >
-                      📝 {t.titulo}
-                    </div>
-                  ))}
+                    <div className="space-y-0.5 overflow-hidden">
+                      {tList.slice(0, 1).map((t) => (
+                        <div
+                          key={t.id}
+                          onClick={() => onSelectTab("trabalhos")}
+                          className="bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200 text-[8px] sm:text-[10px] px-0.5 sm:px-1 py-0.5 rounded-md font-bold truncate cursor-pointer hover:opacity-80"
+                          title={`Trabalho: ${t.titulo}`}
+                        >
+                          📝 {t.titulo}
+                        </div>
+                      ))}
 
-                  {pList.slice(0, 1).map((p) => (
-                    <div
-                      key={p.id}
-                      onClick={() => onSelectTab("provas")}
-                      className="bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200 text-[10px] px-1 py-0.5 rounded-md font-bold truncate cursor-pointer hover:opacity-80"
-                      title={`Prova: ${p.titulo}`}
-                    >
-                      🧪 {p.titulo}
-                    </div>
-                  ))}
+                      {pList.slice(0, 1).map((p) => (
+                        <div
+                          key={p.id}
+                          onClick={() => onSelectTab("provas")}
+                          className="bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200 text-[8px] sm:text-[10px] px-0.5 sm:px-1 py-0.5 rounded-md font-bold truncate cursor-pointer hover:opacity-80"
+                          title={`Prova: ${p.titulo}`}
+                        >
+                          🧪 {p.titulo}
+                        </div>
+                      ))}
 
-                  {rList.slice(0, 1).map((r) => {
-                    const disc = appData.disciplinas.find((d) => d.id === r.disciplinaId);
-                    return (
-                      <div
-                        key={r.id}
-                        onClick={() => onSelectTab("reposicoes")}
-                        className="bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 text-[10px] px-1 py-0.5 rounded-md font-bold truncate cursor-pointer hover:opacity-80"
-                        title={`Reposição: ${disc?.nome || "Matéria"}`}
-                      >
-                        🔄 Rep: {disc?.nome || "Matéria"}
-                      </div>
-                    );
-                  })}
+                      {rList.slice(0, 1).map((r) => {
+                        const disc = appData.disciplinas.find((d) => d.id === r.disciplinaId);
+                        return (
+                          <div
+                            key={r.id}
+                            onClick={() => onSelectTab("reposicoes")}
+                            className="bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 text-[8px] sm:text-[10px] px-0.5 sm:px-1 py-0.5 rounded-md font-bold truncate cursor-pointer hover:opacity-80"
+                            title={`Reposição: ${disc?.nome || "Matéria"}`}
+                          >
+                            🔄 Rep: {disc?.nome || "Matéria"}
+                          </div>
+                        );
+                      })}
 
                   {eList.slice(0, 1).map((ev) => (
                     <div
                       key={ev.id}
-                      className="bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 text-[10px] px-1 py-0.5 rounded-md font-bold truncate cursor-pointer hover:opacity-80"
+                      className="bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 text-[8px] sm:text-[10px] px-0.5 sm:px-1 py-0.5 rounded-md font-bold truncate cursor-pointer hover:opacity-80"
                       title={`Evento: ${ev.titulo}`}
                     >
                       🎉 {ev.titulo}
@@ -276,6 +279,8 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
           })}
         </div>
       </div>
+    </div>
+  </div>
 
       {/* Eventos do Mês Card */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">

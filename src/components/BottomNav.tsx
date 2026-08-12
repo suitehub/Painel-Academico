@@ -40,9 +40,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onSelectTab })
             <button
               key={item.id}
               onClick={() => onSelectTab(item.id)}
-              className={`shrink-0 flex flex-col items-center justify-center px-3 py-1.5 rounded-xl text-xs font-semibold transition-all min-w-[62px] ${
+              className={`shrink-0 flex flex-col items-center justify-center px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all min-w-[60px] active:scale-95 ${
                 isActive
-                  ? "bg-emerald-500/15 dark:bg-emerald-500/25 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+                  ? "bg-emerald-500/15 dark:bg-emerald-500/25 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-2xs font-extrabold"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
             >
