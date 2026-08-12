@@ -66,6 +66,17 @@ export interface AulaReposicao {
   concluida: boolean;
 }
 
+export interface EventoCalendario {
+  id: number;
+  titulo: string;
+  data: string; // YYYY-MM-DD
+  horario?: string; // e.g. "15:00"
+  descricao?: string;
+  categoria?: "evento" | "academico" | "pessoal" | "outro";
+  disciplinaId?: number;
+  concluido?: boolean;
+}
+
 export interface ArquivosState {
   horarios: { idbKey: string; nome: string; atualizadoEm: string } | null;
   calendario: { idbKey: string; nome: string; atualizadoEm: string } | null;
@@ -79,6 +90,7 @@ export interface AppData {
   ementas: Ementa[];
   horariosAulas: HorarioAula[];
   reposicoes: AulaReposicao[];
+  eventos: EventoCalendario[];
   arquivos: ArquivosState;
 }
 

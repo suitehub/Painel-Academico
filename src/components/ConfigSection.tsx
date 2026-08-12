@@ -136,6 +136,7 @@ export const ConfigSection: React.FC<ConfigSectionProps> = ({
           trabalhos: payload.trabalhos || [],
           provas: payload.provas || [],
           reposicoes: payload.reposicoes || [],
+          eventos: payload.eventos || [],
           ementas: payload.ementas || [],
           horariosAulas: payload.horariosAulas || [],
           arquivos: payload.arquivos || { horarios: null, calendario: null },

@@ -42,6 +42,14 @@ export interface ExtractedItems {
     sala?: string;
     motivo?: string;
   }[];
+  eventos?: {
+    titulo: string;
+    data: string;
+    horario?: string;
+    descricao?: string;
+    categoria?: "evento" | "academico" | "pessoal" | "outro";
+    disciplinaNome?: string;
+  }[];
 }
 
 interface AITutorModalProps {
@@ -121,7 +129,8 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
           (extracted.provas && extracted.provas.length > 0) ||
           (extracted.disciplinas && extracted.disciplinas.length > 0) ||
           (extracted.aulas && extracted.aulas.length > 0) ||
-          (extracted.reposicoes && extracted.reposicoes.length > 0));
+          (extracted.reposicoes && extracted.reposicoes.length > 0) ||
+          (extracted.eventos && extracted.eventos.length > 0));
 
       setMessages((prev) => [
         ...prev,
@@ -214,7 +223,8 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
                 (msg.extractedItems.provas && msg.extractedItems.provas.length > 0) ||
                 (msg.extractedItems.disciplinas && msg.extractedItems.disciplinas.length > 0) ||
                 (msg.extractedItems.aulas && msg.extractedItems.aulas.length > 0) ||
-                (msg.extractedItems.reposicoes && msg.extractedItems.reposicoes.length > 0));
+                (msg.extractedItems.reposicoes && msg.extractedItems.reposicoes.length > 0) ||
+                (msg.extractedItems.eventos && msg.extractedItems.eventos.length > 0));
 
             return (
               <div
@@ -289,6 +299,14 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
                             <span className="px-2 py-0.5 bg-amber-500 text-white rounded font-bold text-[10px]">Reposição</span>
                             <span className="font-bold truncate">{r.disciplinaNome || "Reposição"}</span>
                             <span className="text-slate-400 text-[10px] ml-auto font-mono shrink-0">Data: {r.data}</span>
+                          </div>
+                        ))}
+
+                        {msg.extractedItems.eventos?.map((ev, idx) => (
+                          <div key={`ev-${idx}`} className="flex items-center gap-2 bg-white/80 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+                            <span className="px-2 py-0.5 bg-purple-500 text-white rounded font-bold text-[10px]">Evento</span>
+                            <span className="font-bold truncate">{ev.titulo}</span>
+                            <span className="text-slate-400 text-[10px] ml-auto font-mono shrink-0">Data: {ev.data}</span>
                           </div>
                         ))}
                       </div>

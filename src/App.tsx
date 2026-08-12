@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { User } from "firebase/auth";
-import { AppData, TabSection, Trabalho, Prova, Disciplina, Aula, Ementa, HorarioAula, AulaReposicao } from "./types";
+import { AppData, TabSection, Trabalho, Prova, Disciplina, Aula, Ementa, HorarioAula, AulaReposicao, EventoCalendario } from "./types";
 import { loadAppData, saveAppData, clearAllData, getEmptyData } from "./lib/storage";
 import { idbClear } from "./lib/idb";
 import {
@@ -263,6 +263,33 @@ export default function App() {
     showToast("Aula de reposição excluída.");
   };
 
+  // Handlers for Eventos
+  const handleSaveEvento = (evento: EventoCalendario) => {
+    updateAppData((prev) => {
+      const exists = (prev.eventos || []).some((e) => e.id === evento.id);
+      const newEventos = exists
+        ? prev.eventos.map((e) => (e.id === evento.id ? evento : e))
+        : [...(prev.eventos || []), evento];
+      return { ...prev, eventos: newEventos };
+    });
+    showToast("Evento salvo no calendário!");
+  };
+
+  const handleToggleEvento = (id: number) => {
+    updateAppData((prev) => ({
+      ...prev,
+      eventos: (prev.eventos || []).map((e) => (e.id === id ? { ...e, concluido: !e.concluido } : e)),
+    }));
+  };
+
+  const handleDeleteEvento = (id: number) => {
+    updateAppData((prev) => ({
+      ...prev,
+      eventos: (prev.eventos || []).filter((e) => e.id !== id),
+    }));
+    showToast("Evento excluído.");
+  };
+
   // Handlers for Horarios
   const handleSaveHorario = (h: HorarioAula) => {
     updateAppData((prev) => {
@@ -300,6 +327,7 @@ export default function App() {
     let countDisciplinas = 0;
     let countAulas = 0;
     let countReposicoes = 0;
+    let countEventos = 0;
 
     updateAppData((prev) => {
       let currentDisciplinas = [...prev.disciplinas];
@@ -307,6 +335,7 @@ export default function App() {
       let currentProvas = [...prev.provas];
       let currentAulas = [...prev.aulas];
       let currentReposicoes = [...(prev.reposicoes || [])];
+      let currentEventos = [...(prev.eventos || [])];
 
       const getOrCreateDiscId = (discName?: string, discId?: number | null) => {
         if (discId) {
@@ -415,6 +444,23 @@ export default function App() {
         });
       }
 
+      if (items.eventos && items.eventos.length > 0) {
+        items.eventos.forEach((ev) => {
+          const dId = ev.disciplinaNome ? getOrCreateDiscId(ev.disciplinaNome, undefined) : undefined;
+          currentEventos.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            titulo: ev.titulo || "Evento / Compromisso",
+            data: ev.data || new Date().toISOString().split("T")[0],
+            horario: ev.horario || "",
+            descricao: ev.descricao || "",
+            categoria: ev.categoria || "academico",
+            disciplinaId: dId || undefined,
+            concluido: false,
+          });
+          countEventos++;
+        });
+      }
+
       return {
         ...prev,
         disciplinas: currentDisciplinas,
@@ -422,17 +468,18 @@ export default function App() {
         provas: currentProvas,
         aulas: currentAulas,
         reposicoes: currentReposicoes,
+        eventos: currentEventos,
       };
     });
 
-    const totalAdded = countTrabalhos + countProvas + countDisciplinas + countAulas + countReposicoes;
+    const totalAdded = countTrabalhos + countProvas + countDisciplinas + countAulas + countReposicoes + countEventos;
     if (totalAdded > 0) {
       showToast(`✨ ${totalAdded} item(ns) adicionado(s) com sucesso ao seu painel!`);
     }
   };
 
   const openQuickAddModal = (
-    type: "trabalho" | "prova" | "disciplina" | "aula" | "ementa" | "reposicao" | "quickSheet" = "quickSheet",
+    type: "trabalho" | "prova" | "disciplina" | "aula" | "ementa" | "reposicao" | "evento" | "quickSheet" = "quickSheet",
     payload?: any
   ) => {
     setQuickAddModal({ isOpen: true, type, payload });
@@ -486,7 +533,7 @@ export default function App() {
             <GeralSection
               appData={appData}
               onSelectTab={setCurrentTab}
-              onOpenQuickAdd={() => openQuickAddModal("quickSheet")}
+              onOpenQuickAdd={(type) => openQuickAddModal(type as any)}
               onOpenAITutor={() => setIsAITutorOpen(true)}
               onEditTrabalho={(t) => openQuickAddModal("trabalho", t)}
               onEditProva={(p) => openQuickAddModal("prova", p)}
@@ -538,6 +585,9 @@ export default function App() {
               appData={appData}
               onUpdateArquivos={handleUpdateArquivos}
               onSelectTab={setCurrentTab}
+              onOpenQuickAdd={(type, payload) => openQuickAddModal(type as any, payload)}
+              onToggleEvento={handleToggleEvento}
+              onDeleteEvento={handleDeleteEvento}
             />
           )}
 
@@ -592,6 +642,7 @@ export default function App() {
         onSaveAula={handleSaveAula}
         onSaveEmenta={handleSaveEmenta}
         onSaveReposicao={handleSaveReposicao}
+        onSaveEvento={handleSaveEvento}
       />
 
       {/* AI Tutor Chatbot Modal */}

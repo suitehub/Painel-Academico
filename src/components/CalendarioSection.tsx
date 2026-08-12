@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Calendar as CalendarIcon, Upload, FileText, ExternalLink, Download, ChevronLeft, ChevronRight } from "lucide-react";
-import { AppData } from "../types";
+import { Calendar as CalendarIcon, Upload, FileText, ExternalLink, Download, ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle2, Clock } from "lucide-react";
+import { AppData, EventoCalendario } from "../types";
 import { idbSet, idbGet, idbDel, generateUid } from "../lib/idb";
 import { fmtBR, parseLocalDate } from "../lib/dateUtils";
 
@@ -8,12 +8,18 @@ interface CalendarioSectionProps {
   appData: AppData;
   onUpdateArquivos: (arquivos: any) => void;
   onSelectTab: (tab: any) => void;
+  onOpenQuickAdd?: (type?: string, payload?: any) => void;
+  onToggleEvento?: (id: number) => void;
+  onDeleteEvento?: (id: number) => void;
 }
 
 export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
   appData,
   onUpdateArquivos,
   onSelectTab,
+  onOpenQuickAdd,
+  onToggleEvento,
+  onDeleteEvento,
 }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [currentMonthDate, setCurrentMonthDate] = useState<Date>(new Date());
@@ -116,7 +122,7 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
   const prevMonth = () => setCurrentMonthDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentMonthDate(new Date(year, month + 1, 1));
 
-  // Find assignments, exams & replacement classes for a specific day string (YYYY-MM-DD)
+  // Find assignments, exams, replacement classes & custom events for a specific day string (YYYY-MM-DD)
   const getEventsForDay = (dayNum: number) => {
     const mStr = String(month + 1).padStart(2, "0");
     const dStr = String(dayNum).padStart(2, "0");
@@ -125,40 +131,57 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
     const tList = appData.trabalhos.filter((t) => t.dataEntrega === iso);
     const pList = appData.provas.filter((p) => p.data === iso);
     const rList = appData.reposicoes.filter((r) => r.data === iso);
+    const eList = (appData.eventos || []).filter((e) => e.data === iso);
 
-    return { tList, pList, rList, iso };
+    return { tList, pList, rList, eList, iso };
   };
+
+  const eventosDoMes = (appData.eventos || []).filter((ev) => {
+    const [y, m] = ev.data.split("-").map(Number);
+    return y === year && m === month + 1;
+  });
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
       {/* Interactive Month Calendar Grid */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div>
             <h3 className="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
               <CalendarIcon className="w-5 h-5 text-emerald-500" /> Calendário Acadêmico Mensal
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Visualização de entregas e datas importantes
+              Visualização de entregas, provas, reposições e eventos
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={prevMonth}
-              className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-slate-700 dark:text-slate-300 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="font-bold text-sm text-slate-900 dark:text-white px-2 min-w-[120px] text-center">
-              {monthNames[month]} {year}
-            </span>
-            <button
-              onClick={nextMonth}
-              className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-slate-700 dark:text-slate-300 transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {onOpenQuickAdd && (
+              <button
+                onClick={() => onOpenQuickAdd("evento")}
+                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1 shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" /> + Evento
+              </button>
+            )}
+
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={prevMonth}
+                className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-slate-700 dark:text-slate-300 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="font-bold text-sm text-slate-900 dark:text-white px-2 min-w-[120px] text-center">
+                {monthNames[month]} {year}
+              </span>
+              <button
+                onClick={nextMonth}
+                className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-slate-700 dark:text-slate-300 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -183,8 +206,8 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
           {/* Days of Month */}
           {Array.from({ length: daysInMonth }).map((_, idx) => {
             const dayNum = idx + 1;
-            const { tList, pList, rList } = getEventsForDay(dayNum);
-            const totalEvents = tList.length + pList.length + rList.length;
+            const { tList, pList, rList, eList } = getEventsForDay(dayNum);
+            const totalEvents = tList.length + pList.length + rList.length + eList.length;
 
             return (
               <div
@@ -234,6 +257,16 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
                     );
                   })}
 
+                  {eList.slice(0, 1).map((ev) => (
+                    <div
+                      key={ev.id}
+                      className="bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 text-[10px] px-1 py-0.5 rounded-md font-bold truncate cursor-pointer hover:opacity-80"
+                      title={`Evento: ${ev.titulo}`}
+                    >
+                      🎉 {ev.titulo}
+                    </div>
+                  ))}
+
                   {totalEvents > 2 && (
                     <div className="text-[9px] font-bold text-slate-400 text-right">+{totalEvents - 2} mais</div>
                   )}
@@ -242,6 +275,119 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
             );
           })}
         </div>
+      </div>
+
+      {/* Eventos do Mês Card */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div>
+            <h3 className="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+              <CalendarIcon className="w-5 h-5 text-purple-500" /> Eventos & Compromissos de {monthNames[month]}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Registros e lembretes cadastrados para este mês
+            </p>
+          </div>
+
+          {onOpenQuickAdd && (
+            <button
+              onClick={() => onOpenQuickAdd("evento")}
+              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-all shadow-xs flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" /> Adicionar Evento
+            </button>
+          )}
+        </div>
+
+        {eventosDoMes.length === 0 ? (
+          <div className="p-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
+            <p>Nenhum evento registrado para {monthNames[month]}.</p>
+            {onOpenQuickAdd && (
+              <button
+                onClick={() => onOpenQuickAdd("evento")}
+                className="text-purple-600 dark:text-purple-400 font-bold hover:underline"
+              >
+                + Clique para adicionar um evento
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {eventosDoMes.map((ev) => {
+              const disc = appData.disciplinas.find((d) => d.id === ev.disciplinaId);
+              return (
+                <div
+                  key={ev.id}
+                  className={`p-3.5 rounded-xl border transition-all flex items-start justify-between gap-3 ${
+                    ev.concluido
+                      ? "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 opacity-60"
+                      : "bg-purple-50/40 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800/60"
+                  }`}
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-purple-500 text-white">
+                        {ev.categoria?.toUpperCase() || "EVENTO"}
+                      </span>
+                      {disc && (
+                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                          {disc.nome}
+                        </span>
+                      )}
+                      {ev.horario && (
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-purple-500" /> {ev.horario}
+                        </span>
+                      )}
+                    </div>
+
+                    <h4 className={`font-bold text-sm ${ev.concluido ? "line-through text-slate-500" : "text-slate-900 dark:text-white"}`}>
+                      {ev.titulo}
+                    </h4>
+
+                    {ev.descricao && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                        {ev.descricao}
+                      </p>
+                    )}
+
+                    <p className="text-[10px] text-purple-600 dark:text-purple-400 font-bold">
+                      📅 {fmtBR(ev.data)}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    {onToggleEvento && (
+                      <button
+                        onClick={() => onToggleEvento(ev.id)}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          ev.concluido
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                            : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-emerald-500 hover:text-white"
+                        }`}
+                        title={ev.concluido ? "Marcar como pendente" : "Marcar como concluído"}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    {onDeleteEvento && (
+                      <button
+                        onClick={() => {
+                          if (confirm(`Excluir evento "${ev.titulo}"?`)) onDeleteEvento(ev.id);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        title="Excluir evento"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* PDF Official Calendar Upload & Viewer Card */}

@@ -1,13 +1,13 @@
 import React, { useState } from "react";
-import { X, FileText, TestTube, BookOpen, FileSpreadsheet, Plus, RotateCcw } from "lucide-react";
-import { AppData, Trabalho, Prova, Disciplina, Aula, Ementa, AulaReposicao } from "../types";
+import { X, FileText, TestTube, BookOpen, FileSpreadsheet, Plus, RotateCcw, Calendar as CalendarIcon } from "lucide-react";
+import { AppData, Trabalho, Prova, Disciplina, Aula, Ementa, AulaReposicao, EventoCalendario } from "../types";
 import { todayISO } from "../lib/dateUtils";
 import { idbSet, generateUid } from "../lib/idb";
 
 interface QuickAddModalProps {
   isOpen: boolean;
   onClose: () => void;
-  modalType: "trabalho" | "prova" | "disciplina" | "aula" | "ementa" | "reposicao" | "quickSheet" | null;
+  modalType: "trabalho" | "prova" | "disciplina" | "aula" | "ementa" | "reposicao" | "evento" | "quickSheet" | null;
   payload?: any;
   appData: AppData;
   onSaveTrabalho: (t: Trabalho) => void;
@@ -16,6 +16,7 @@ interface QuickAddModalProps {
   onSaveAula: (a: Aula) => void;
   onSaveEmenta: (e: Ementa) => void;
   onSaveReposicao: (r: AulaReposicao) => void;
+  onSaveEvento?: (e: EventoCalendario) => void;
 }
 
 export const QuickAddModal: React.FC<QuickAddModalProps> = ({
@@ -30,14 +31,17 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
   onSaveAula,
   onSaveEmenta,
   onSaveReposicao,
+  onSaveEvento,
 }) => {
-  const [activeType, setActiveType] = useState<"trabalho" | "prova" | "disciplina" | "aula" | "ementa" | "reposicao">(
+  const [activeType, setActiveType] = useState<"trabalho" | "prova" | "disciplina" | "aula" | "ementa" | "reposicao" | "evento">(
     modalType === "quickSheet" || !modalType ? "trabalho" : (modalType as any)
   );
 
   // Common Form Fields
   const [titulo, setTitulo] = useState(payload?.titulo || payload?.nome || "");
   const [data, setData] = useState(payload?.dataEntrega || payload?.data || todayISO());
+  const [horario, setHorario] = useState(payload?.horario || "14:00");
+  const [categoria, setCategoria] = useState<"evento" | "academico" | "pessoal" | "outro">(payload?.categoria || "academico");
   const [descricao, setDescricao] = useState(payload?.descricao || payload?.conteudo || "");
   const [disciplinaId, setDisciplinaId] = useState<number>(
     payload?.disciplinaId || appData.disciplinas[0]?.id || 0
@@ -126,6 +130,20 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
         motivo: descricao.trim() || undefined,
         concluida: payload?.concluida || false,
       });
+    } else if (activeType === "evento") {
+      if (!titulo.trim()) return alert("Preencha o título do evento.");
+      if (onSaveEvento) {
+        onSaveEvento({
+          id: payload?.id || Date.now(),
+          titulo: titulo.trim(),
+          data,
+          horario: horario.trim() || undefined,
+          descricao: descricao.trim() || undefined,
+          categoria,
+          disciplinaId: disciplinaId || undefined,
+          concluido: payload?.concluido || false,
+        });
+      }
     }
 
     onClose();
@@ -153,6 +171,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
             {[
               { type: "trabalho", label: "📝 Trabalho", icon: FileText },
               { type: "prova", label: "🧪 Prova", icon: TestTube },
+              { type: "evento", label: "🎉 Evento", icon: CalendarIcon },
               { type: "disciplina", label: "📚 Disciplina", icon: BookOpen },
               { type: "aula", label: "✍️ Aula", icon: FileText },
               { type: "reposicao", label: "🔄 Reposição", icon: RotateCcw },
@@ -178,7 +197,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           {/* Title input */}
           <div>
             <label className="block text-slate-400 font-bold mb-1">
-              {activeType === "disciplina" ? "Nome da Disciplina:" : "Título:"}
+              {activeType === "disciplina" ? "Nome da Disciplina:" : activeType === "evento" ? "Título do Evento:" : "Título:"}
             </label>
             <input
               type="text"
@@ -189,6 +208,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                   ? "Ex: Relatório de Laboratório"
                   : activeType === "prova"
                   ? "Ex: P1 de Cálculo"
+                  : activeType === "evento"
+                  ? "Ex: Simpósio de Tecnologia / Feira de Carreiras"
                   : activeType === "disciplina"
                   ? "Ex: Estrutura de Dados"
                   : activeType === "aula"
@@ -199,15 +220,18 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
             />
           </div>
 
-          {/* Discipline selector for assignment, exam, lecture, syllabus */}
+          {/* Discipline selector for assignment, exam, lecture, syllabus, event */}
           {activeType !== "disciplina" && (
             <div>
-              <label className="block text-slate-400 font-bold mb-1">Matéria / Disciplina:</label>
+              <label className="block text-slate-400 font-bold mb-1">
+                Matéria / Disciplina {activeType === "evento" ? "(Opcional):" : ":"}
+              </label>
               <select
                 value={disciplinaId}
                 onChange={(e) => setDisciplinaId(Number(e.target.value))}
                 className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 font-medium"
               >
+                {activeType === "evento" && <option value={0}>Nenhuma (Geral / Evento Geral)</option>}
                 {appData.disciplinas.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.nome}
@@ -217,18 +241,50 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
             </div>
           )}
 
-          {/* Date picker for assignment, exam, lecture */}
-          {(activeType === "trabalho" || activeType === "prova" || activeType === "aula") && (
+          {/* Date picker */}
+          {(activeType === "trabalho" || activeType === "prova" || activeType === "aula" || activeType === "evento" || activeType === "reposicao") && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">
+                  Data:
+                </label>
+                <input
+                  type="date"
+                  value={data}
+                  onChange={(e) => setData(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 font-medium"
+                />
+              </div>
+
+              {activeType === "evento" && (
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Horário:</label>
+                  <input
+                    type="text"
+                    value={horario}
+                    onChange={(e) => setHorario(e.target.value)}
+                    placeholder="Ex: 14:00"
+                    className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 font-medium"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Category for Event */}
+          {activeType === "evento" && (
             <div>
-              <label className="block text-slate-400 font-bold mb-1">
-                {activeType === "trabalho" ? "Data Limite de Entrega:" : activeType === "prova" ? "Data da Prova:" : "Data da Aula:"}
-              </label>
-              <input
-                type="date"
-                value={data}
-                onChange={(e) => setData(e.target.value)}
+              <label className="block text-slate-400 font-bold mb-1">Categoria:</label>
+              <select
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value as any)}
                 className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 font-medium"
-              />
+              >
+                <option value="academico">🎓 Acadêmico (Palestra, Congresso, Feira)</option>
+                <option value="evento">🎉 Evento Geral / Festivo</option>
+                <option value="pessoal">👤 Compromisso Pessoal</option>
+                <option value="outro">📌 Outro</option>
+              </select>
             </div>
           )}
 
@@ -270,7 +326,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               <textarea
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
-                placeholder="Insira requisitos, conteúdos cobrados ou anotações..."
+                placeholder="Insira detalhes, local, observações ou requisitos..."
                 rows={4}
                 className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 font-medium"
               />

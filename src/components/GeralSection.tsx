@@ -22,7 +22,7 @@ import { callStudyPlan } from "../lib/aiService";
 interface GeralSectionProps {
   appData: AppData;
   onSelectTab: (tab: TabSection) => void;
-  onOpenQuickAdd: () => void;
+  onOpenQuickAdd: (type?: string) => void;
   onOpenAITutor: () => void;
   onEditTrabalho: (t: any) => void;
   onEditProva: (p: any) => void;
@@ -449,6 +449,168 @@ export const GeralSection: React.FC<GeralSectionProps> = ({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Compromissos do Dia e da Semana (Trabalhos, Provas, Reposições e Eventos) */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div>
+            <h3 className="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-purple-500" /> Agenda de Compromissos (Dia & Semana)
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Todos os trabalhos, provas, aulas de reposição e eventos programados
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onSelectTab("calendario")}
+              className="px-3 py-1.5 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
+            >
+              Ver no Calendário
+            </button>
+            <button
+              onClick={() => onOpenQuickAdd("evento")}
+              className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" /> + Evento / Compromisso
+            </button>
+          </div>
+        </div>
+
+        {/* List of Compromissos */}
+        {(() => {
+          const eventosAtivos = (appData.eventos || []).filter((e) => !e.concluido);
+
+          const allCompromissosSemana = [
+            ...trabalhosAtivos.map((t) => ({
+              kind: "trabalho" as const,
+              id: `t_${t.id}`,
+              titulo: t.titulo,
+              data: t.dataEntrega,
+              horario: undefined,
+              badge: "📝 Trabalho",
+              badgeStyle: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+              discId: t.disciplinaId,
+              detail: t.descricao,
+              ref: t,
+              targetTab: "trabalhos",
+            })),
+            ...provasAtivas.map((p) => ({
+              kind: "prova" as const,
+              id: `p_${p.id}`,
+              titulo: p.titulo,
+              data: p.data,
+              horario: undefined,
+              badge: "🧪 Prova",
+              badgeStyle: "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300",
+              discId: p.disciplinaId,
+              detail: p.descricao,
+              ref: p,
+              targetTab: "provas",
+            })),
+            ...reposicoesAtivas.map((r) => ({
+              kind: "reposicao" as const,
+              id: `r_${r.id}`,
+              titulo: `Aula de Reposição - ${getDisciplinaName(r.disciplinaId) || "Matéria"}`,
+              data: r.data,
+              horario: r.horario,
+              badge: "🔄 Reposição",
+              badgeStyle: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+              discId: r.disciplinaId,
+              detail: r.motivo ? `Motivo: ${r.motivo}` : r.sala ? `Sala: ${r.sala}` : undefined,
+              ref: r,
+              targetTab: "reposicoes",
+            })),
+            ...eventosAtivos.map((ev) => ({
+              kind: "evento" as const,
+              id: `ev_${ev.id}`,
+              titulo: ev.titulo,
+              data: ev.data,
+              horario: ev.horario,
+              badge: "🎉 Evento",
+              badgeStyle: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
+              discId: ev.disciplinaId,
+              detail: ev.descricao,
+              ref: ev,
+              targetTab: "calendario",
+            })),
+          ]
+            .filter((item) => isWithinNext7Days(item.data))
+            .sort((a, b) => a.data.localeCompare(b.data));
+
+          if (allCompromissosSemana.length === 0) {
+            return (
+              <div className="py-6 text-center text-slate-400 dark:text-slate-500 text-xs">
+                Nenhum compromisso ou evento agendado para esta semana!
+              </div>
+            );
+          }
+
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {allCompromissosSemana.map((c) => {
+                const discName = getDisciplinaName(c.discId);
+                const isToday = c.data === hoje;
+                const dueStatus = getDueStatus(c.data);
+
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => onSelectTab(c.targetTab)}
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start justify-between gap-3 group ${
+                      isToday
+                        ? "bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800"
+                        : "bg-slate-50 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700/60 hover:border-purple-500"
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${c.badgeStyle}`}>
+                          {c.badge}
+                        </span>
+                        {discName && (
+                          <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                            {discName}
+                          </span>
+                        )}
+                        {c.horario && (
+                          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                            🕒 {c.horario}
+                          </span>
+                        )}
+                      </div>
+
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                        {c.titulo}
+                      </h4>
+
+                      {c.detail && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+                          {c.detail}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold inline-block ${
+                          isToday
+                            ? "bg-emerald-500 text-white"
+                            : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                        }`}
+                      >
+                        {isToday ? "HOJE" : dueStatus.label}
+                      </span>
+                      <p className="text-[10px] text-slate-400 font-mono mt-1">{fmtBR(c.data)}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Disciplinas Overview & Grade Averages */}

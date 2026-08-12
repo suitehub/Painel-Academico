@@ -115,6 +115,17 @@ export function getInitialData(): AppData {
         concluida: false,
       },
     ],
+    eventos: [
+      {
+        id: 601,
+        titulo: "Feira de Carreiras & Tecnologia",
+        data: dateIn(2),
+        horario: "10:00",
+        descricao: "Estandes de empresas parceiras e palestras no auditório principal.",
+        categoria: "academico",
+        concluido: false,
+      },
+    ],
     arquivos: {
       horarios: null,
       calendario: null,
@@ -131,6 +142,7 @@ export function getEmptyData(): AppData {
     ementas: [],
     horariosAulas: [],
     reposicoes: [],
+    eventos: [],
     arquivos: {
       horarios: null,
       calendario: null,
@@ -163,6 +175,7 @@ export function loadAppData(): AppData {
       ementas: parsed.ementas || [],
       horariosAulas: parsed.horariosAulas || [],
       reposicoes: parsed.reposicoes || [],
+      eventos: parsed.eventos || [],
       arquivos: parsed.arquivos || { horarios: null, calendario: null },
     };
   } catch (err) {
