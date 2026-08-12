@@ -56,6 +56,16 @@ export interface HorarioAula {
   sala?: string;
 }
 
+export interface AulaReposicao {
+  id: number;
+  disciplinaId: number;
+  data: string; // YYYY-MM-DD
+  horario?: string; // e.g. "14:00 - 16:00"
+  sala?: string;
+  motivo?: string;
+  concluida: boolean;
+}
+
 export interface ArquivosState {
   horarios: { idbKey: string; nome: string; atualizadoEm: string } | null;
   calendario: { idbKey: string; nome: string; atualizadoEm: string } | null;
@@ -68,6 +78,7 @@ export interface AppData {
   provas: Prova[];
   ementas: Ementa[];
   horariosAulas: HorarioAula[];
+  reposicoes: AulaReposicao[];
   arquivos: ArquivosState;
 }
 
@@ -80,6 +91,7 @@ export type TabSection =
   | "aulas"
   | "horarios"
   | "calendario"
+  | "reposicoes"
   | "ementa"
   | "config";
 

@@ -12,6 +12,7 @@ import {
   Moon,
   Sun,
   Flame,
+  RotateCcw,
 } from "lucide-react";
 import { TabSection } from "../types";
 
@@ -39,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: "aulas", label: "Aulas & Notas", icon: BookOpen },
     { id: "horarios", label: "Horários", icon: Clock },
     { id: "calendario", label: "Calendário", icon: CalendarIcon },
+    { id: "reposicoes", label: "Reposições", icon: RotateCcw },
     { id: "ementa", label: "Ementas", icon: FileSpreadsheet },
     { id: "config", label: "Configurações", icon: Settings },
   ];

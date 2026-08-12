@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { User } from "firebase/auth";
-import { AppData, TabSection, Trabalho, Prova, Disciplina, Aula, Ementa, HorarioAula } from "./types";
+import { AppData, TabSection, Trabalho, Prova, Disciplina, Aula, Ementa, HorarioAula, AulaReposicao } from "./types";
 import { loadAppData, saveAppData, clearAllData, getEmptyData } from "./lib/storage";
 import { idbClear } from "./lib/idb";
 import {
@@ -19,6 +19,7 @@ import { ProvasSection } from "./components/ProvasSection";
 import { AulasSection } from "./components/AulasSection";
 import { HorariosSection } from "./components/HorariosSection";
 import { CalendarioSection } from "./components/CalendarioSection";
+import { ReposicoesSection } from "./components/ReposicoesSection";
 import { EmentasSection } from "./components/EmentasSection";
 import { ConfigSection } from "./components/ConfigSection";
 import { AITutorModal, ExtractedItems } from "./components/AITutorModal";
@@ -242,6 +243,26 @@ export default function App() {
     showToast("Ementa excluída.");
   };
 
+  // Handlers for Reposicoes
+  const handleSaveReposicao = (reposicao: AulaReposicao) => {
+    updateAppData((prev) => {
+      const exists = (prev.reposicoes || []).some((r) => r.id === reposicao.id);
+      const newReposicoes = exists
+        ? prev.reposicoes.map((r) => (r.id === reposicao.id ? reposicao : r))
+        : [...(prev.reposicoes || []), reposicao];
+      return { ...prev, reposicoes: newReposicoes };
+    });
+    showToast("Aula de reposição salva com sucesso!");
+  };
+
+  const handleDeleteReposicao = (id: number) => {
+    updateAppData((prev) => ({
+      ...prev,
+      reposicoes: (prev.reposicoes || []).filter((r) => r.id !== id),
+    }));
+    showToast("Aula de reposição excluída.");
+  };
+
   // Handlers for Horarios
   const handleSaveHorario = (h: HorarioAula) => {
     updateAppData((prev) => {
@@ -278,12 +299,14 @@ export default function App() {
     let countProvas = 0;
     let countDisciplinas = 0;
     let countAulas = 0;
+    let countReposicoes = 0;
 
     updateAppData((prev) => {
       let currentDisciplinas = [...prev.disciplinas];
       let currentTrabalhos = [...prev.trabalhos];
       let currentProvas = [...prev.provas];
       let currentAulas = [...prev.aulas];
+      let currentReposicoes = [...(prev.reposicoes || [])];
 
       const getOrCreateDiscId = (discName?: string, discId?: number | null) => {
         if (discId) {
@@ -376,23 +399,40 @@ export default function App() {
         });
       }
 
+      if (items.reposicoes && items.reposicoes.length > 0) {
+        items.reposicoes.forEach((r) => {
+          const dId = getOrCreateDiscId(r.disciplinaNome, r.disciplinaId);
+          currentReposicoes.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            disciplinaId: dId,
+            data: r.data || new Date().toISOString().split("T")[0],
+            horario: r.horario || "",
+            sala: r.sala || "",
+            motivo: r.motivo || "Reposição de aula",
+            concluida: false,
+          });
+          countReposicoes++;
+        });
+      }
+
       return {
         ...prev,
         disciplinas: currentDisciplinas,
         trabalhos: currentTrabalhos,
         provas: currentProvas,
         aulas: currentAulas,
+        reposicoes: currentReposicoes,
       };
     });
 
-    const totalAdded = countTrabalhos + countProvas + countDisciplinas + countAulas;
+    const totalAdded = countTrabalhos + countProvas + countDisciplinas + countAulas + countReposicoes;
     if (totalAdded > 0) {
       showToast(`✨ ${totalAdded} item(ns) adicionado(s) com sucesso ao seu painel!`);
     }
   };
 
   const openQuickAddModal = (
-    type: "trabalho" | "prova" | "disciplina" | "aula" | "ementa" | "quickSheet" = "quickSheet",
+    type: "trabalho" | "prova" | "disciplina" | "aula" | "ementa" | "reposicao" | "quickSheet" = "quickSheet",
     payload?: any
   ) => {
     setQuickAddModal({ isOpen: true, type, payload });
@@ -501,6 +541,16 @@ export default function App() {
             />
           )}
 
+          {currentTab === "reposicoes" && (
+            <ReposicoesSection
+              appData={appData}
+              searchQuery={searchQuery}
+              onSaveReposicao={handleSaveReposicao}
+              onDeleteReposicao={handleDeleteReposicao}
+              onOpenModal={(type, payload) => openQuickAddModal(type, payload)}
+            />
+          )}
+
           {currentTab === "ementa" && (
             <EmentasSection
               appData={appData}
@@ -541,6 +591,7 @@ export default function App() {
         onSaveDisciplina={handleSaveDisciplina}
         onSaveAula={handleSaveAula}
         onSaveEmenta={handleSaveEmenta}
+        onSaveReposicao={handleSaveReposicao}
       />
 
       {/* AI Tutor Chatbot Modal */}

@@ -127,6 +127,16 @@ Retorne estritamente um JSON com o seguinte formato:
         "conteudo": "string",
         "data": "YYYY-MM-DD"
       }
+    ],
+    "reposicoes": [
+      {
+        "disciplinaNome": "string",
+        "disciplinaId": number | null,
+        "data": "YYYY-MM-DD",
+        "horario": "string",
+        "sala": "string",
+        "motivo": "string"
+      }
     ]
   }
 }

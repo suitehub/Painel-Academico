@@ -104,6 +104,17 @@ export function getInitialData(): AppData {
       { id: "h6", disciplinaId: 101, diaSemana: 4, horaInicio: "08:45", horaFim: "09:30", sala: "Bloco A - Lab 02" },
       { id: "h7", disciplinaId: 102, diaSemana: 5, horaInicio: "09:40", horaFim: "10:25", sala: "Bloco B - Sala 104" },
     ],
+    reposicoes: [
+      {
+        id: 501,
+        disciplinaId: 101,
+        data: dateIn(5),
+        horario: "14:00 - 16:00",
+        sala: "Bloco A - Lab 02",
+        motivo: "Reposição da aula do feriado",
+        concluida: false,
+      },
+    ],
     arquivos: {
       horarios: null,
       calendario: null,
@@ -119,6 +130,7 @@ export function getEmptyData(): AppData {
     provas: [],
     ementas: [],
     horariosAulas: [],
+    reposicoes: [],
     arquivos: {
       horarios: null,
       calendario: null,
@@ -150,6 +162,7 @@ export function loadAppData(): AppData {
       provas: parsed.provas || [],
       ementas: parsed.ementas || [],
       horariosAulas: parsed.horariosAulas || [],
+      reposicoes: parsed.reposicoes || [],
       arquivos: parsed.arquivos || { horarios: null, calendario: null },
     };
   } catch (err) {

@@ -116,7 +116,7 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
   const prevMonth = () => setCurrentMonthDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentMonthDate(new Date(year, month + 1, 1));
 
-  // Find assignments & exams for a specific day string (YYYY-MM-DD)
+  // Find assignments, exams & replacement classes for a specific day string (YYYY-MM-DD)
   const getEventsForDay = (dayNum: number) => {
     const mStr = String(month + 1).padStart(2, "0");
     const dStr = String(dayNum).padStart(2, "0");
@@ -124,8 +124,9 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
 
     const tList = appData.trabalhos.filter((t) => t.dataEntrega === iso);
     const pList = appData.provas.filter((p) => p.data === iso);
+    const rList = appData.reposicoes.filter((r) => r.data === iso);
 
-    return { tList, pList, iso };
+    return { tList, pList, rList, iso };
   };
 
   return (
@@ -182,8 +183,8 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
           {/* Days of Month */}
           {Array.from({ length: daysInMonth }).map((_, idx) => {
             const dayNum = idx + 1;
-            const { tList, pList } = getEventsForDay(dayNum);
-            const totalEvents = tList.length + pList.length;
+            const { tList, pList, rList } = getEventsForDay(dayNum);
+            const totalEvents = tList.length + pList.length + rList.length;
 
             return (
               <div
@@ -218,6 +219,20 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
                       🧪 {p.titulo}
                     </div>
                   ))}
+
+                  {rList.slice(0, 1).map((r) => {
+                    const disc = appData.disciplinas.find((d) => d.id === r.disciplinaId);
+                    return (
+                      <div
+                        key={r.id}
+                        onClick={() => onSelectTab("reposicoes")}
+                        className="bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 text-[10px] px-1 py-0.5 rounded-md font-bold truncate cursor-pointer hover:opacity-80"
+                        title={`Reposição: ${disc?.nome || "Matéria"}`}
+                      >
+                        🔄 Rep: {disc?.nome || "Matéria"}
+                      </div>
+                    );
+                  })}
 
                   {totalEvents > 2 && (
                     <div className="text-[9px] font-bold text-slate-400 text-right">+{totalEvents - 2} mais</div>

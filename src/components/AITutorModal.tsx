@@ -34,6 +34,14 @@ export interface ExtractedItems {
     conteudo?: string;
     data?: string;
   }[];
+  reposicoes?: {
+    disciplinaNome?: string;
+    disciplinaId?: number | null;
+    data: string;
+    horario?: string;
+    sala?: string;
+    motivo?: string;
+  }[];
 }
 
 interface AITutorModalProps {
@@ -112,7 +120,8 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
         ((extracted.trabalhos && extracted.trabalhos.length > 0) ||
           (extracted.provas && extracted.provas.length > 0) ||
           (extracted.disciplinas && extracted.disciplinas.length > 0) ||
-          (extracted.aulas && extracted.aulas.length > 0));
+          (extracted.aulas && extracted.aulas.length > 0) ||
+          (extracted.reposicoes && extracted.reposicoes.length > 0));
 
       setMessages((prev) => [
         ...prev,
@@ -204,7 +213,8 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
               ((msg.extractedItems.trabalhos && msg.extractedItems.trabalhos.length > 0) ||
                 (msg.extractedItems.provas && msg.extractedItems.provas.length > 0) ||
                 (msg.extractedItems.disciplinas && msg.extractedItems.disciplinas.length > 0) ||
-                (msg.extractedItems.aulas && msg.extractedItems.aulas.length > 0));
+                (msg.extractedItems.aulas && msg.extractedItems.aulas.length > 0) ||
+                (msg.extractedItems.reposicoes && msg.extractedItems.reposicoes.length > 0));
 
             return (
               <div
@@ -271,6 +281,14 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
                           <div key={`a-${idx}`} className="flex items-center gap-2 bg-white/80 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
                             <span className="px-2 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 rounded font-bold text-[10px]">Anotação</span>
                             <span className="font-bold truncate">{a.titulo}</span>
+                          </div>
+                        ))}
+
+                        {msg.extractedItems.reposicoes?.map((r, idx) => (
+                          <div key={`r-${idx}`} className="flex items-center gap-2 bg-white/80 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+                            <span className="px-2 py-0.5 bg-amber-500 text-white rounded font-bold text-[10px]">Reposição</span>
+                            <span className="font-bold truncate">{r.disciplinaNome || "Reposição"}</span>
+                            <span className="text-slate-400 text-[10px] ml-auto font-mono shrink-0">Data: {r.data}</span>
                           </div>
                         ))}
                       </div>

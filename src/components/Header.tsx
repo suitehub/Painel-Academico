@@ -37,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
     aulas: { title: "📚 Disciplinas & Anotações", subtitle: "Aulas, ementas resumidas e cadernos" },
     horarios: { title: "🕒 Quadro de Horários", subtitle: "Grade semanal e comprovante em PDF" },
     calendario: { title: "📅 Calendário Acadêmico", subtitle: "Eventos, feriados e entregas" },
+    reposicoes: { title: "🔄 Aulas de Reposição", subtitle: "Registro e controle de reposições pendentes e agendadas" },
     ementa: { title: "📄 Ementas de Matérias", subtitle: "Documentos e programas de disciplina" },
     config: { title: "⚙️ Configurações & Backup", subtitle: "Exportação, importação e dados locais" },
   };

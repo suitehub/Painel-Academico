@@ -1,13 +1,13 @@
 import React, { useState } from "react";
-import { X, FileText, TestTube, BookOpen, FileSpreadsheet, Plus } from "lucide-react";
-import { AppData, Trabalho, Prova, Disciplina, Aula, Ementa } from "../types";
+import { X, FileText, TestTube, BookOpen, FileSpreadsheet, Plus, RotateCcw } from "lucide-react";
+import { AppData, Trabalho, Prova, Disciplina, Aula, Ementa, AulaReposicao } from "../types";
 import { todayISO } from "../lib/dateUtils";
 import { idbSet, generateUid } from "../lib/idb";
 
 interface QuickAddModalProps {
   isOpen: boolean;
   onClose: () => void;
-  modalType: "trabalho" | "prova" | "disciplina" | "aula" | "ementa" | "quickSheet" | null;
+  modalType: "trabalho" | "prova" | "disciplina" | "aula" | "ementa" | "reposicao" | "quickSheet" | null;
   payload?: any;
   appData: AppData;
   onSaveTrabalho: (t: Trabalho) => void;
@@ -15,6 +15,7 @@ interface QuickAddModalProps {
   onSaveDisciplina: (d: Disciplina) => void;
   onSaveAula: (a: Aula) => void;
   onSaveEmenta: (e: Ementa) => void;
+  onSaveReposicao: (r: AulaReposicao) => void;
 }
 
 export const QuickAddModal: React.FC<QuickAddModalProps> = ({
@@ -28,8 +29,9 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
   onSaveDisciplina,
   onSaveAula,
   onSaveEmenta,
+  onSaveReposicao,
 }) => {
-  const [activeType, setActiveType] = useState<"trabalho" | "prova" | "disciplina" | "aula" | "ementa">(
+  const [activeType, setActiveType] = useState<"trabalho" | "prova" | "disciplina" | "aula" | "ementa" | "reposicao">(
     modalType === "quickSheet" || !modalType ? "trabalho" : (modalType as any)
   );
 
@@ -113,6 +115,17 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
         idbKey: key,
         disciplinaId: disciplinaId || undefined,
       });
+    } else if (activeType === "reposicao") {
+      if (!disciplinaId) return alert("Selecione uma matéria.");
+      onSaveReposicao({
+        id: payload?.id || Date.now(),
+        disciplinaId,
+        data,
+        horario: payload?.horario || undefined,
+        sala: payload?.sala || undefined,
+        motivo: descricao.trim() || undefined,
+        concluida: payload?.concluida || false,
+      });
     }
 
     onClose();
@@ -142,6 +155,7 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
               { type: "prova", label: "🧪 Prova", icon: TestTube },
               { type: "disciplina", label: "📚 Disciplina", icon: BookOpen },
               { type: "aula", label: "✍️ Aula", icon: FileText },
+              { type: "reposicao", label: "🔄 Reposição", icon: RotateCcw },
               { type: "ementa", label: "📄 Ementa", icon: FileSpreadsheet },
             ].map((tab) => (
               <button

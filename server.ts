@@ -89,6 +89,16 @@ Retorne estritamente um JSON com o seguinte formato:
         "conteudo": "string",
         "data": "YYYY-MM-DD"
       }
+    ],
+    "reposicoes": [
+      {
+        "disciplinaNome": "string",
+        "disciplinaId": number | null,
+        "data": "YYYY-MM-DD",
+        "horario": "string",
+        "sala": "string",
+        "motivo": "string"
+      }
     ]
   }
 }
@@ -108,7 +118,7 @@ Se nenhuma tarefa for mencionada para cadastro, retorne os arrays de "extractedI
     const parsed = JSON.parse(response.text || "{}");
     return res.json({
       text: parsed.text || "Processado com sucesso.",
-      extractedItems: parsed.extractedItems || { trabalhos: [], provas: [], disciplinas: [], aulas: [] },
+      extractedItems: parsed.extractedItems || { trabalhos: [], provas: [], disciplinas: [], aulas: [], reposicoes: [] },
     });
   } catch (error: any) {
     console.error("Erro no assistente IA:", error);

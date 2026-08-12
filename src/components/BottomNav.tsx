@@ -8,6 +8,7 @@ import {
   Calendar as CalendarIcon,
   FileSpreadsheet,
   Settings,
+  RotateCcw,
 } from "lucide-react";
 import { TabSection } from "../types";
 
@@ -24,6 +25,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onSelectTab })
     { id: "aulas", label: "Aulas", icon: BookOpen },
     { id: "horarios", label: "Horário", icon: Clock },
     { id: "calendario", label: "Calend.", icon: CalendarIcon },
+    { id: "reposicoes", label: "Repos.", icon: RotateCcw },
     { id: "ementa", label: "Ementa", icon: FileSpreadsheet },
     { id: "config", label: "Config", icon: Settings },
   ];

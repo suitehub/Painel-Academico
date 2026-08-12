@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Brain,
   Loader2,
+  RotateCcw,
 } from "lucide-react";
 import { AppData, TabSection } from "../types";
 import { todayISO, isWithinNext7Days, isPast, getDueStatus, fmtBR } from "../lib/dateUtils";
@@ -41,12 +42,15 @@ export const GeralSection: React.FC<GeralSectionProps> = ({
 
   const trabalhosAtivos = appData.trabalhos.filter((t) => !t.concluido);
   const provasAtivas = appData.provas.filter((p) => !p.concluido);
+  const reposicoesAtivas = appData.reposicoes.filter((r) => !r.concluida);
 
   const trabalhosHoje = trabalhosAtivos.filter((t) => t.dataEntrega === hoje);
   const provasHoje = provasAtivas.filter((p) => p.data === hoje);
+  const reposicoesHoje = reposicoesAtivas.filter((r) => r.data === hoje);
 
   const trabalhosSemana = trabalhosAtivos.filter((t) => isWithinNext7Days(t.dataEntrega));
   const provasSemana = provasAtivas.filter((p) => isWithinNext7Days(p.data));
+  const reposicoesSemana = reposicoesAtivas.filter((r) => isWithinNext7Days(r.data));
 
   const atrasosT = trabalhosAtivos.filter((t) => isPast(t.dataEntrega));
   const atrasosP = provasAtivas.filter((p) => isPast(p.data));
@@ -135,6 +139,48 @@ export const GeralSection: React.FC<GeralSectionProps> = ({
             className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-colors shrink-0"
           >
             Ver Atrasados
+          </button>
+        </div>
+      )}
+
+      {/* Replacement Classes Notice Banner if any for today or this week */}
+      {reposicoesAtivas.length > 0 && (reposicoesHoje.length > 0 || reposicoesSemana.length > 0) && (
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-4 flex items-start gap-3 text-amber-900 dark:text-amber-200 shadow-xs">
+          <RotateCcw className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="font-extrabold text-sm">Aulas de Reposição Agendadas</h4>
+              {reposicoesHoje.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black animate-pulse">
+                  ⚠️ HOJE: {reposicoesHoje.length}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-amber-800 dark:text-amber-300 mt-1">
+              {reposicoesHoje.length > 0
+                ? `Você tem ${reposicoesHoje.length} aula(s) de reposição agendada(s) para hoje!`
+                : `Você tem ${reposicoesSemana.length} aula(s) de reposição agendada(s) para esta semana.`}
+            </p>
+            <div className="mt-2 space-y-1">
+              {reposicoesSemana.slice(0, 3).map((r) => {
+                const disc = appData.disciplinas.find((d) => d.id === r.disciplinaId);
+                return (
+                  <div key={r.id} className="text-xs flex items-center gap-2 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                    <strong className="text-slate-900 dark:text-white">{disc?.nome || "Matéria"}:</strong>
+                    <span>{fmtBR(r.data)}</span>
+                    {r.horario && <span className="text-amber-800 dark:text-amber-300">({r.horario})</span>}
+                    {r.sala && <span className="text-slate-500 dark:text-slate-400">- {r.sala}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <button
+            onClick={() => onSelectTab("reposicoes")}
+            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-colors shrink-0"
+          >
+            Ver Reposições
           </button>
         </div>
       )}

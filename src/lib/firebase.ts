@@ -147,6 +147,7 @@ export async function loadUserDataFromFirestore(
         provas: data.provas || [],
         ementas: data.ementas || [],
         horariosAulas: data.horariosAulas || [],
+        reposicoes: data.reposicoes || [],
         arquivos: data.arquivos || { horarios: null, calendario: null },
       };
     }
@@ -176,6 +177,7 @@ export function subscribeUserDataFromFirestore(
           provas: data.provas || [],
           ementas: data.ementas || [],
           horariosAulas: data.horariosAulas || [],
+          reposicoes: data.reposicoes || [],
           arquivos: data.arquivos || { horarios: null, calendario: null },
         });
       }
