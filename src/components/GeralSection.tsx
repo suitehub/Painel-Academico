@@ -531,7 +531,7 @@ export const GeralSection: React.FC<GeralSectionProps> = ({
               horario: ev.horario,
               badge: "🎉 Evento",
               badgeStyle: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
-              discId: ev.disciplinaId,
+              discId: undefined,
               detail: ev.descricao,
               ref: ev,
               targetTab: "calendario",

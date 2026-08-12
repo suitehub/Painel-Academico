@@ -106,8 +106,7 @@ Retorne estritamente um JSON com o seguinte formato:
         "data": "YYYY-MM-DD",
         "horario": "string",
         "descricao": "string",
-        "categoria": "evento" | "academico" | "pessoal" | "outro",
-        "disciplinaNome": "string"
+        "categoria": "evento" | "academico" | "pessoal" | "outro"
       }
     ]
   }
@@ -115,15 +114,34 @@ Retorne estritamente um JSON com o seguinte formato:
 
 Se nenhuma tarefa for mencionada para cadastro, retorne os arrays de "extractedItems" vazios.`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
-      contents: prompt,
-      config: {
-        systemInstruction,
-        responseMimeType: "application/json",
-        temperature: 0.3,
-      },
-    });
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: prompt,
+        config: {
+          systemInstruction,
+          responseMimeType: "application/json",
+          temperature: 0.3,
+        },
+      });
+    } catch (apiErr: any) {
+      if (apiErr?.status === 429 || apiErr?.message?.includes("429") || apiErr?.message?.includes("Quota exceeded") || apiErr?.message?.includes("RESOURCE_EXHAUSTED")) {
+        // Wait 3 seconds and retry once
+        await new Promise((res) => setTimeout(res, 3000));
+        response = await ai.models.generateContent({
+          model: "gemini-3.6-flash",
+          contents: prompt,
+          config: {
+            systemInstruction,
+            responseMimeType: "application/json",
+            temperature: 0.3,
+          },
+        });
+      } else {
+        throw apiErr;
+      }
+    }
 
     const parsed = JSON.parse(response.text || "{}");
     return res.json({
@@ -132,6 +150,9 @@ Se nenhuma tarefa for mencionada para cadastro, retorne os arrays de "extractedI
     });
   } catch (error: any) {
     console.error("Erro no assistente IA:", error);
+    if (error?.status === 429 || error?.message?.includes("429") || error?.message?.includes("Quota exceeded") || error?.message?.includes("RESOURCE_EXHAUSTED")) {
+      return res.status(429).json({ error: "O limite temporário de requisições do Gemini foi atingido (cota gratuita). Por favor, aguarde de 10 a 15 segundos e tente novamente!" });
+    }
     return res.status(500).json({ error: error.message || "Erro interno no servidor de IA." });
   }
 });

@@ -140,7 +140,6 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
           horario: horario.trim() || undefined,
           descricao: descricao.trim() || undefined,
           categoria,
-          disciplinaId: disciplinaId || undefined,
           concluido: payload?.concluido || false,
         });
       }
@@ -220,18 +219,17 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
             />
           </div>
 
-          {/* Discipline selector for assignment, exam, lecture, syllabus, event */}
-          {activeType !== "disciplina" && (
+          {/* Discipline selector for assignment, exam, lecture, syllabus */}
+          {activeType !== "disciplina" && activeType !== "evento" && (
             <div>
               <label className="block text-slate-400 font-bold mb-1">
-                Matéria / Disciplina {activeType === "evento" ? "(Opcional):" : ":"}
+                Matéria / Disciplina:
               </label>
               <select
                 value={disciplinaId}
                 onChange={(e) => setDisciplinaId(Number(e.target.value))}
                 className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 font-medium"
               >
-                {activeType === "evento" && <option value={0}>Nenhuma (Geral / Evento Geral)</option>}
                 {appData.disciplinas.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.nome}

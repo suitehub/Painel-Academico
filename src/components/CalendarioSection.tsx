@@ -314,7 +314,6 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {eventosDoMes.map((ev) => {
-              const disc = appData.disciplinas.find((d) => d.id === ev.disciplinaId);
               return (
                 <div
                   key={ev.id}
@@ -329,11 +328,6 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
                       <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-purple-500 text-white">
                         {ev.categoria?.toUpperCase() || "EVENTO"}
                       </span>
-                      {disc && (
-                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                          {disc.nome}
-                        </span>
-                      )}
                       {ev.horario && (
                         <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
                           <Clock className="w-3 h-3 text-purple-500" /> {ev.horario}

@@ -446,7 +446,6 @@ export default function App() {
 
       if (items.eventos && items.eventos.length > 0) {
         items.eventos.forEach((ev) => {
-          const dId = ev.disciplinaNome ? getOrCreateDiscId(ev.disciplinaNome, undefined) : undefined;
           currentEventos.push({
             id: Date.now() + Math.floor(Math.random() * 1000),
             titulo: ev.titulo || "Evento / Compromisso",
@@ -454,7 +453,6 @@ export default function App() {
             horario: ev.horario || "",
             descricao: ev.descricao || "",
             categoria: ev.categoria || "academico",
-            disciplinaId: dId || undefined,
             concluido: false,
           });
           countEventos++;

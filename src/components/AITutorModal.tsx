@@ -142,11 +142,16 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
         },
       ]);
     } catch (err: any) {
+      const isQuotaError = err.message?.includes("429") || err.message?.includes("Quota exceeded") || err.message?.includes("RESOURCE_EXHAUSTED");
+      const errorMsg = isQuotaError
+        ? "⏳ O limite de mensagens temporário da API gratuita do Gemini foi atingido. Por favor, aguarde cerca de 10 a 15 segundos e envie sua mensagem novamente."
+        : `⚠️ Desculpe, não consegui obter resposta no momento. (${err.message || "Verifique sua conexão ou tente novamente em instantes."})`;
+
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `⚠️ Desculpe, não consegui obter resposta no momento. (${err.message || "Verifique se a chave de API do Gemini está configurada."})`,
+          content: errorMsg,
         },
       ]);
     } finally {
