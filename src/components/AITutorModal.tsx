@@ -400,7 +400,7 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
                   type="password"
                   value={apiKeyInput}
                   onChange={(e) => setApiKeyInput(e.target.value)}
-                  placeholder="AIzaSy..."
+                  placeholder="Cole sua chave de API do Gemini..."
                   className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 font-mono"
                 />
               </div>

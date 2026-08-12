@@ -8,6 +8,14 @@ const PORT = 3000;
 
 app.use(express.json({ limit: "25mb" }));
 
+function sanitizeErrorMessage(error: any): string {
+  const msg = error?.message || String(error || "Erro interno no servidor.");
+  return msg
+    .replace(/AIzaSy[A-Za-z0-9_-]{33}/g, "[CHAVE_OCULTA]")
+    .replace(/key=[A-Za-z0-9_-]+/gi, "key=[CHAVE_OCULTA]")
+    .replace(/bearer\s+[A-Za-z0-9_.-]+/gi, "bearer [TOKEN_OCULTO]");
+}
+
 // Server-side Gemini AI setup
 function getGenAI() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -153,7 +161,7 @@ Se nenhuma tarefa for mencionada para cadastro, retorne os arrays de "extractedI
     if (error?.status === 429 || error?.message?.includes("429") || error?.message?.includes("Quota exceeded") || error?.message?.includes("RESOURCE_EXHAUSTED")) {
       return res.status(429).json({ error: "O limite temporário de requisições do Gemini foi atingido (cota gratuita). Por favor, aguarde de 10 a 15 segundos e tente novamente!" });
     }
-    return res.status(500).json({ error: error.message || "Erro interno no servidor de IA." });
+    return res.status(500).json({ error: sanitizeErrorMessage(error) });
   }
 });
 
@@ -182,7 +190,7 @@ app.post("/api/ai/summarize-notes", async (req, res) => {
     return res.json({ summary: response.text });
   } catch (error: any) {
     console.error("Erro ao resumir anotações:", error);
-    return res.status(500).json({ error: error.message || "Erro ao processar resumo." });
+    return res.status(500).json({ error: sanitizeErrorMessage(error) });
   }
 });
 
@@ -211,7 +219,7 @@ app.post("/api/ai/generate-quiz", async (req, res) => {
     return res.json({ questions });
   } catch (error: any) {
     console.error("Erro ao gerar quiz:", error);
-    return res.status(500).json({ error: error.message || "Erro ao gerar simulado." });
+    return res.status(500).json({ error: sanitizeErrorMessage(error) });
   }
 });
 
@@ -237,7 +245,7 @@ app.post("/api/ai/study-plan", async (req, res) => {
     return res.json({ plan: response.text });
   } catch (error: any) {
     console.error("Erro ao gerar plano de estudos:", error);
-    return res.status(500).json({ error: error.message || "Erro ao gerar plano." });
+    return res.status(500).json({ error: sanitizeErrorMessage(error) });
   }
 });
 
