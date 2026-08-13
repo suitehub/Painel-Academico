@@ -24,21 +24,42 @@ const rawConfigFiles = import.meta.glob<{ default: Record<string, string> }>(
 const appletConfig = Object.values(rawConfigFiles)[0]?.default || {};
 
 export const firebaseConfig = {
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || appletConfig.projectId || "confirma-ebfc3",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || appletConfig.appId || "1:261676539561:web:b9416709976629f613d3b8",
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || appletConfig.apiKey || "AIzaSyBPtNVslidmNWtzgupihOgFk8a5AgAwhA8",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || appletConfig.authDomain || "confirma-ebfc3.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || appletConfig.projectId || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || appletConfig.appId || "",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || appletConfig.apiKey || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || appletConfig.authDomain || "",
   firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID || appletConfig.firestoreDatabaseId || "ai-studio-painelacadmico-1fef0d27-e056-4053-af54-b7e3dee6aee6",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || appletConfig.storageBucket || "confirma-ebfc3.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || appletConfig.messagingSenderId || "261676539561",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || appletConfig.storageBucket || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || appletConfig.messagingSenderId || "",
 };
 
 import { AppData } from "../types";
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
+export const isFirebaseConfigured = Boolean(
+  firebaseConfig.apiKey && firebaseConfig.apiKey.trim() !== ""
+);
+
+let app: any = null;
+let dbInstance: any = null;
+let authInstance: any = null;
+let googleProviderInstance: any = null;
+
+if (isFirebaseConfigured) {
+  try {
+    app = initializeApp(firebaseConfig);
+    dbInstance = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+    authInstance = getAuth(app);
+    googleProviderInstance = new GoogleAuthProvider();
+  } catch (err) {
+    console.warn("Falha ao inicializar Firebase:", err);
+  }
+} else {
+  console.info("Firebase não configurado ou chave ausente. Aplicação rodando em modo local.");
+}
+
+export const db = dbInstance;
+export const auth = authInstance;
+export const googleProvider = googleProviderInstance;
 
 export enum OperationType {
   CREATE = "create",
@@ -74,13 +95,13 @@ export function handleFirestoreError(
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
+      userId: auth?.currentUser?.uid,
+      email: auth?.currentUser?.email,
+      emailVerified: auth?.currentUser?.emailVerified,
+      isAnonymous: auth?.currentUser?.isAnonymous,
+      tenantId: auth?.currentUser?.tenantId,
       providerInfo:
-        auth.currentUser?.providerData?.map((provider) => ({
+        auth?.currentUser?.providerData?.map((provider: any) => ({
           providerId: provider.providerId,
           email: provider.email,
         })) || [],
@@ -93,6 +114,7 @@ export function handleFirestoreError(
 }
 
 export async function testConnection() {
+  if (!isFirebaseConfigured || !db) return;
   try {
     await getDocFromServer(doc(db, "test", "connection"));
   } catch (error) {
@@ -109,6 +131,9 @@ export async function testConnection() {
 testConnection();
 
 export async function loginWithGoogle(): Promise<User | null> {
+  if (!isFirebaseConfigured || !auth || !googleProvider) {
+    throw new Error("O Firebase de autenticação não está configurado neste ambiente.");
+  }
   try {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
@@ -119,6 +144,7 @@ export async function loginWithGoogle(): Promise<User | null> {
 }
 
 export async function logoutFirebase(): Promise<void> {
+  if (!isFirebaseConfigured || !auth) return;
   try {
     await signOut(auth);
   } catch (err) {
@@ -128,6 +154,10 @@ export async function logoutFirebase(): Promise<void> {
 }
 
 export function subscribeToAuth(callback: (user: User | null) => void) {
+  if (!isFirebaseConfigured || !auth) {
+    callback(null);
+    return () => {};
+  }
   return onAuthStateChanged(auth, callback);
 }
 
@@ -135,6 +165,7 @@ export async function saveUserDataToFirestore(
   userId: string,
   data: AppData
 ): Promise<void> {
+  if (!isFirebaseConfigured || !db) return;
   const path = `user_data/${userId}`;
   try {
     const userDocRef = doc(db, "user_data", userId);
@@ -151,6 +182,7 @@ export async function saveUserDataToFirestore(
 export async function loadUserDataFromFirestore(
   userId: string
 ): Promise<AppData | null> {
+  if (!isFirebaseConfigured || !db) return null;
   const path = `user_data/${userId}`;
   try {
     const userDocRef = doc(db, "user_data", userId);
@@ -181,6 +213,7 @@ export function subscribeUserDataFromFirestore(
   onUpdate: (data: AppData) => void,
   onError?: (err: any) => void
 ) {
+  if (!isFirebaseConfigured || !db) return () => {};
   const path = `user_data/${userId}`;
   const userDocRef = doc(db, "user_data", userId);
   return onSnapshot(

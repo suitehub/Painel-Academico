@@ -484,7 +484,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col md:flex-row font-sans selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col md:flex-row font-sans selection:bg-emerald-500 selection:text-white overflow-x-hidden w-full max-w-full">
       {/* Toast Notification Floating */}
       {toastMessage && (
         <div className="fixed bottom-20 md:bottom-6 right-6 z-50 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-3 rounded-2xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-slideUp border border-slate-700/50">
@@ -504,7 +504,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden">
         <Header
           currentTab={currentTab}
           searchQuery={searchQuery}
@@ -519,7 +519,7 @@ export default function App() {
           onLogout={handleLogout}
         />
 
-        <main className="flex-1 px-3 sm:px-6 md:px-8 pt-4 pb-24 md:py-6 max-w-7xl w-full mx-auto">
+        <main className="flex-1 px-3 sm:px-6 md:px-8 pt-4 pb-24 md:py-6 max-w-7xl w-full mx-auto min-w-0 overflow-x-hidden">
           {/* Floating Pomodoro Widget if toggled */}
           {isPomodoroOpen && (
             <div className="mb-6 animate-fadeIn">

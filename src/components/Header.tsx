@@ -45,19 +45,19 @@ export const Header: React.FC<HeaderProps> = ({
   const currentInfo = titles[currentTab] || { title: "Painel Acadêmico", subtitle: "" };
 
   return (
-    <header className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 md:px-8 py-2.5 sm:py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3">
-      <div>
-        <h2 className="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+    <header className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 md:px-8 py-2.5 sm:py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3 w-full max-w-full overflow-hidden">
+      <div className="min-w-0">
+        <h2 className="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight truncate">
           {currentInfo.title}
         </h2>
-        <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium">
+        <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
           {currentInfo.subtitle}
         </p>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+      <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full md:w-auto">
         {/* Global Search Bar */}
-        <div className="relative flex-1 min-w-[140px] md:w-64">
+        <div className="relative flex-1 min-w-[120px] md:w-64">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"

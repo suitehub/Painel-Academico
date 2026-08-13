@@ -162,11 +162,11 @@ export const TrabalhosSection: React.FC<TrabalhosSectionProps> = ({
                     : "border-slate-200 dark:border-slate-800 hover:border-emerald-500/50"
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
                     <button
                       onClick={(e) => toggleConcluido(t, e)}
-                      className="mt-0.5 text-slate-400 hover:text-emerald-500 transition-colors"
+                      className="mt-0.5 text-slate-400 hover:text-emerald-500 transition-colors shrink-0"
                       title={t.concluido ? "Marcar como pendente" : "Concluir trabalho"}
                     >
                       {t.concluido ? (
@@ -176,27 +176,27 @@ export const TrabalhosSection: React.FC<TrabalhosSectionProps> = ({
                       )}
                     </button>
 
-                    <div className="flex-1 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : t.id)}>
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : t.id)}>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 shrink-0">
                           {discName}
                         </span>
-                        <h3 className={`font-extrabold text-sm text-slate-900 dark:text-white ${t.concluido ? "line-through" : ""}`}>
+                        <h3 className={`font-extrabold text-sm text-slate-900 dark:text-white break-words ${t.concluido ? "line-through" : ""}`}>
                           {t.titulo}
                         </h3>
                       </div>
 
                       <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1.5 flex-wrap">
                         <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" /> Entrega: {fmtBR(t.dataEntrega)}
+                          <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" /> Entrega: {fmtBR(t.dataEntrega)}
                         </span>
                         {t.peso !== undefined && (
                           <span className="flex items-center gap-1 font-medium">
-                            <Award className="w-3.5 h-3.5 text-amber-500" /> Peso: {t.peso}
+                            <Award className="w-3.5 h-3.5 text-amber-500 shrink-0" /> Peso: {t.peso}
                           </span>
                         )}
                         {t.nota !== undefined && (
-                          <span className="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md">
+                          <span className="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md shrink-0">
                             Nota: {t.nota}
                           </span>
                         )}
@@ -205,9 +205,9 @@ export const TrabalhosSection: React.FC<TrabalhosSectionProps> = ({
                   </div>
 
                   {/* Due status badge & options */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap w-full sm:w-auto pt-2.5 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800/80">
                     <span
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 ${
                         t.concluido
                           ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                           : status.type === "today"
@@ -220,30 +220,32 @@ export const TrabalhosSection: React.FC<TrabalhosSectionProps> = ({
                       {t.concluido ? "Concluído" : status.label}
                     </span>
 
-                    <button
-                      onClick={() => onOpenModal("trabalho", t)}
-                      className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                      title="Editar"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm(`Excluir o trabalho "${t.titulo}"?`)) {
-                          onDeleteTrabalho(t.id);
-                        }
-                      }}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                      title="Excluir"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setExpandedId(isExpanded ? null : t.id)}
-                      className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"
-                    >
-                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0 ml-auto sm:ml-0">
+                      <button
+                        onClick={() => onOpenModal("trabalho", t)}
+                        className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                        title="Editar"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Excluir o trabalho "${t.titulo}"?`)) {
+                            onDeleteTrabalho(t.id);
+                          }
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                        title="Excluir"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setExpandedId(isExpanded ? null : t.id)}
+                        className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                      >
+                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
