@@ -180,14 +180,22 @@ export async function saveUserDataToFirestore(
   userId: string,
   data: AppData
 ): Promise<void> {
-  if (!isFirebaseConfigured || !db) return;
+  if (!isFirebaseConfigured || !db || !userId) return;
   const path = `user_data/${userId}`;
   try {
     const userDocRef = doc(db, "user_data", userId);
-    // Sanitize any undefined properties into null/omitted to ensure strict Firestore compliance
+    // Sanitize data: remove any undefined values and prevent oversized base64 file payloads from breaking Firestore limit
     const sanitized = JSON.parse(
-      JSON.stringify(data, (_, v) => (v === undefined ? null : v))
+      JSON.stringify(data, (key, value) => {
+        if (value === undefined) return null;
+        // If an inline file string exceeds 800KB, omit raw dataURL from Firestore document
+        if (typeof value === "string" && value.startsWith("data:") && value.length > 500000) {
+          return null;
+        }
+        return value;
+      })
     );
+
     await setDoc(
       userDocRef,
       {
@@ -205,21 +213,27 @@ export async function saveUserDataToFirestore(
       },
       { merge: true }
     );
-    console.info("Firestore sincronizado com sucesso.");
+    console.info("⚡ Firestore: dados salvos automaticamente na nuvem.");
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
+    throw err;
   }
 }
 
-export async function loadUserDataFromFirestore(
+export async function fetchFreshUserDataFromFirestore(
   userId: string
 ): Promise<AppData | null> {
-  if (!isFirebaseConfigured || !db) return null;
+  if (!isFirebaseConfigured || !db || !userId) return null;
   const path = `user_data/${userId}`;
   try {
     const userDocRef = doc(db, "user_data", userId);
-    const snap = await getDoc(userDocRef);
-    if (snap.exists()) {
+    let snap;
+    try {
+      snap = await getDocFromServer(userDocRef);
+    } catch {
+      snap = await getDoc(userDocRef);
+    }
+    if (snap && snap.exists()) {
       const data = snap.data();
       return {
         disciplinas: data.disciplinas || [],
@@ -242,29 +256,34 @@ export async function loadUserDataFromFirestore(
 
 export function subscribeUserDataFromFirestore(
   userId: string,
-  onUpdate: (data: AppData) => void,
+  onUpdate: (data: AppData, hasPendingWrites: boolean) => void,
   onNotFound?: () => void,
   onError?: (err: any) => void
 ) {
-  if (!isFirebaseConfigured || !db) return () => {};
+  if (!isFirebaseConfigured || !db || !userId) return () => {};
   const path = `user_data/${userId}`;
   const userDocRef = doc(db, "user_data", userId);
   return onSnapshot(
     userDocRef,
+    { includeMetadataChanges: true },
     (snap) => {
       if (snap.exists()) {
         const data = snap.data();
-        onUpdate({
-          disciplinas: data.disciplinas || [],
-          aulas: data.aulas || [],
-          trabalhos: data.trabalhos || [],
-          provas: data.provas || [],
-          ementas: data.ementas || [],
-          horariosAulas: data.horariosAulas || [],
-          reposicoes: data.reposicoes || [],
-          eventos: data.eventos || [],
-          arquivos: data.arquivos || { horarios: null, calendario: null },
-        });
+        const hasPendingWrites = snap.metadata.hasPendingWrites;
+        onUpdate(
+          {
+            disciplinas: data.disciplinas || [],
+            aulas: data.aulas || [],
+            trabalhos: data.trabalhos || [],
+            provas: data.provas || [],
+            ementas: data.ementas || [],
+            horariosAulas: data.horariosAulas || [],
+            reposicoes: data.reposicoes || [],
+            eventos: data.eventos || [],
+            arquivos: data.arquivos || { horarios: null, calendario: null },
+          },
+          hasPendingWrites
+        );
       } else {
         if (onNotFound) {
           onNotFound();

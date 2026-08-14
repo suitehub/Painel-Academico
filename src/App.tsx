@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { User } from "firebase/auth";
 import { AppData, TabSection, Trabalho, Prova, Disciplina, Aula, Ementa, HorarioAula, AulaReposicao, EventoCalendario } from "./types";
 import { loadAppData, saveAppData, clearAllData, getEmptyData } from "./lib/storage";
@@ -9,6 +9,7 @@ import {
   logoutFirebase,
   saveUserDataToFirestore,
   subscribeUserDataFromFirestore,
+  fetchFreshUserDataFromFirestore,
 } from "./lib/firebase";
 import { Sidebar } from "./components/Sidebar";
 import { BottomNav } from "./components/BottomNav";
@@ -37,7 +38,10 @@ export default function App() {
     return localStorage.getItem("academic_theme") === "dark";
   });
 
-  const isRemoteUpdateRef = React.useRef(false);
+  // Track if current state update is coming from remote Firestore to prevent write-loops
+  const isIncomingRemoteUpdate = useRef<boolean>(false);
+  const currentUserRef = useRef<User | null>(null);
+  currentUserRef.current = currentUser;
 
   // Firebase Auth listener
   useEffect(() => {
@@ -47,44 +51,74 @@ export default function App() {
     return () => unsubscribeAuth();
   }, []);
 
-  // Firestore realtime sync when user is logged in
+  // Sync to Firestore function
+  const pushToFirestore = useCallback(async (data: AppData, uid: string) => {
+    try {
+      setIsSyncing(true);
+      await saveUserDataToFirestore(uid, data);
+      setLastSyncTime(new Date().toISOString());
+    } catch (err) {
+      console.error("Erro ao sincronizar automaticamente com o Firestore:", err);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, []);
+
+  // Firestore realtime listener
   useEffect(() => {
     if (!currentUser) return;
 
-    let isFirstSnapshot = true;
+    let isFirst = true;
     const unsubscribeDoc = subscribeUserDataFromFirestore(
       currentUser.uid,
-      (remoteData) => {
-        isRemoteUpdateRef.current = true;
-        setAppData(remoteData);
-        saveAppData(remoteData);
-        setLastSyncTime(new Date().toISOString());
-        if (isFirstSnapshot) {
-          showToast("☁️ Conectado ao Firebase. Dados em nuvem sincronizados!");
-          isFirstSnapshot = false;
+      (remoteData, hasPendingWrites) => {
+        // If snapshot is coming from server (or not local write echo)
+        if (!hasPendingWrites) {
+          isIncomingRemoteUpdate.current = true;
+          setAppData(remoteData);
+          saveAppData(remoteData);
+          setLastSyncTime(new Date().toISOString());
+          if (isFirst) {
+            showToast("☁️ Conectado ao Firebase. Sincronização em tempo real ativa!");
+            isFirst = false;
+          }
         }
       },
       () => {
-        // If document doesn't exist in Firestore yet, push the current local data to create it
-        console.log("Criando documento inicial do usuário no Firestore...");
-        setIsSyncing(true);
-        saveUserDataToFirestore(currentUser.uid, appData)
-          .then(() => {
-            setLastSyncTime(new Date().toISOString());
-            setIsSyncing(false);
-          })
-          .catch((err) => {
-            console.error("Erro ao inicializar dados no Firestore:", err);
-            setIsSyncing(false);
-          });
+        // Document does not exist in Firestore yet -> initialize with local data
+        console.log("Inicializando dados na nuvem...");
+        pushToFirestore(appData, currentUser.uid);
       },
       (err) => {
-        console.error("Erro ao escutar Firestore:", err);
+        console.error("Erro no listener Firestore:", err);
       }
     );
 
-    return () => unsubscribeDoc();
-  }, [currentUser?.uid]);
+    // Auto-fetch fresh data on tab focus, visibility change, or network reconnection (crucial for mobile devices)
+    const handleReactivation = async () => {
+      if (document.visibilityState === "visible" && currentUserRef.current) {
+        console.log("📱 Aba reativada/em foco: verificando atualizações na nuvem...");
+        const freshData = await fetchFreshUserDataFromFirestore(currentUserRef.current.uid);
+        if (freshData) {
+          isIncomingRemoteUpdate.current = true;
+          setAppData(freshData);
+          saveAppData(freshData);
+          setLastSyncTime(new Date().toISOString());
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleReactivation);
+    window.addEventListener("focus", handleReactivation);
+    window.addEventListener("online", handleReactivation);
+
+    return () => {
+      unsubscribeDoc();
+      document.removeEventListener("visibilitychange", handleReactivation);
+      window.removeEventListener("focus", handleReactivation);
+      window.removeEventListener("online", handleReactivation);
+    };
+  }, [currentUser?.uid, pushToFirestore]);
 
   // Modals state
   const [isAITutorOpen, setIsAITutorOpen] = useState(false);
@@ -120,22 +154,13 @@ export default function App() {
     }, 2800);
   };
 
+  // Main automatic mutation updater: updates state, local storage, AND pushes instantly to cloud
   const updateAppData = (updater: (prev: AppData) => AppData) => {
     setAppData((prev) => {
       const next = updater(prev);
       saveAppData(next);
-
-      if (currentUser) {
-        setIsSyncing(true);
-        saveUserDataToFirestore(currentUser.uid, next)
-          .then(() => {
-            setLastSyncTime(new Date().toISOString());
-            setIsSyncing(false);
-          })
-          .catch((err) => {
-            console.error("Erro ao salvar no Firestore:", err);
-            setIsSyncing(false);
-          });
+      if (currentUserRef.current) {
+        pushToFirestore(next, currentUserRef.current.uid);
       }
       return next;
     });
@@ -352,7 +377,10 @@ export default function App() {
   const handleRestoreData = (newFullData: AppData) => {
     setAppData(newFullData);
     saveAppData(newFullData);
-    showToast("Dados restaurados com sucesso!");
+    if (currentUserRef.current) {
+      pushToFirestore(newFullData, currentUserRef.current.uid);
+    }
+    showToast("Dados restaurados e sincronizados na nuvem!");
   };
 
   const handleBatchAddItems = (items: ExtractedItems) => {
