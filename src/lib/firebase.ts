@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
@@ -15,20 +15,14 @@ import {
   onSnapshot,
   getDocFromServer,
 } from "firebase/firestore";
-// Safely load firebase-applet-config.json if available without breaking Vite build if missing
-const rawConfigFiles = import.meta.glob<{ default: Record<string, string> }>(
-  "../../firebase-applet-config.json",
-  { eager: true }
-);
-
-const appletConfig = Object.values(rawConfigFiles)[0]?.default || {};
+import appletConfig from "../../firebase-applet-config.json";
 
 export const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || appletConfig.projectId || "",
   appId: import.meta.env.VITE_FIREBASE_APP_ID || appletConfig.appId || "",
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || appletConfig.apiKey || "",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || appletConfig.authDomain || "",
-  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID || appletConfig.firestoreDatabaseId || "ai-studio-painelacadmico-1fef0d27-e056-4053-af54-b7e3dee6aee6",
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID || appletConfig.firestoreDatabaseId || "(default)",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || appletConfig.storageBucket || "",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || appletConfig.messagingSenderId || "",
 };
@@ -46,10 +40,12 @@ let googleProviderInstance: any = null;
 
 if (isFirebaseConfigured) {
   try {
-    app = initializeApp(firebaseConfig);
-    dbInstance = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    const dbId = firebaseConfig.firestoreDatabaseId;
+    dbInstance = dbId && dbId !== "(default)" ? getFirestore(app, dbId) : getFirestore(app);
     authInstance = getAuth(app);
     googleProviderInstance = new GoogleAuthProvider();
+    googleProviderInstance.setCustomParameters({ prompt: "select_account" });
   } catch (err) {
     console.warn("Falha ao inicializar Firebase:", err);
   }
@@ -137,8 +133,17 @@ export async function loginWithGoogle(): Promise<User | null> {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
-  } catch (err) {
+  } catch (err: any) {
     console.error("Erro ao fazer login com Google:", err);
+    if (err?.code === "auth/popup-blocked") {
+      throw new Error("O popup de login foi bloqueado pelo navegador. Permita popups para este site ou abra em uma nova aba.");
+    } else if (err?.code === "auth/popup-closed-by-user" || err?.code === "auth/cancelled-popup-request") {
+      throw new Error("A janela de login foi fechada antes de concluir a autenticação.");
+    } else if (err?.code === "auth/unauthorized-domain") {
+      throw new Error("Domínio não autorizado no Firebase Auth. Abra a aplicação em uma nova aba do navegador.");
+    } else if (err?.code === "auth/network-request-failed") {
+      throw new Error("Falha na conexão de rede com o Firebase.");
+    }
     throw err;
   }
 }

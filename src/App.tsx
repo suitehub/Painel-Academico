@@ -116,8 +116,8 @@ export default function App() {
       if (user) {
         showToast(`Bem-vindo(a), ${user.displayName || user.email}!`);
       }
-    } catch (err) {
-      showToast("Falha ao realizar login com o Google.");
+    } catch (err: any) {
+      showToast(err?.message || "Falha ao realizar login com o Google.");
     }
   };
 
