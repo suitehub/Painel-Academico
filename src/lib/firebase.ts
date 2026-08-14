@@ -15,7 +15,17 @@ import {
   onSnapshot,
   getDocFromServer,
 } from "firebase/firestore";
-import appletConfig from "../../firebase-applet-config.json";
+// Safely load firebase-applet-config.json if present (e.g., local AI Studio environment)
+// without breaking builds when the file is gitignored or missing in CI / GitHub Actions
+const rawConfigFiles = import.meta.glob<Record<string, any>>(
+  "/firebase-applet-config.json",
+  { eager: true }
+);
+
+const appletConfig: Record<string, string> =
+  rawConfigFiles["/firebase-applet-config.json"]?.default ||
+  rawConfigFiles["/firebase-applet-config.json"] ||
+  {};
 
 export const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || appletConfig.projectId || "",
