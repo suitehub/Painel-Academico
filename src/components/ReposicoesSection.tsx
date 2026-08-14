@@ -14,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { AppData, AulaReposicao, FiltroTipo } from "../types";
-import { todayISO, isWithinNext7Days, isPast, fmtBR } from "../lib/dateUtils";
+import { todayISO, isThisWeek, isPast, fmtBR } from "../lib/dateUtils";
 
 interface ReposicoesSectionProps {
   appData: AppData;
@@ -115,7 +115,7 @@ export const ReposicoesSection: React.FC<ReposicoesSectionProps> = ({
 
     if (filter === "ativos") return !item.concluida;
     if (filter === "hoje") return !item.concluida && item.data === hoje;
-    if (filter === "7d") return !item.concluida && isWithinNext7Days(item.data);
+    if (filter === "7d") return !item.concluida && isThisWeek(item.data);
     if (filter === "atrasados") return !item.concluida && isPast(item.data);
     if (filter === "concluidos") return item.concluida;
 
@@ -323,7 +323,7 @@ export const ReposicoesSection: React.FC<ReposicoesSectionProps> = ({
             const disc = appData.disciplinas.find((d) => d.id === item.disciplinaId);
             const discCor = disc?.cor || "#f59e0b";
             const isToday = item.data === hoje;
-            const isUpcoming = isWithinNext7Days(item.data);
+            const isUpcoming = isThisWeek(item.data);
             const isOverdue = !item.concluida && isPast(item.data);
 
             return (

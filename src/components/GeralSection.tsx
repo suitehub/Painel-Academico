@@ -16,7 +16,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { AppData, TabSection } from "../types";
-import { todayISO, isWithinNext7Days, isPast, getDueStatus, fmtBR } from "../lib/dateUtils";
+import { todayISO, isThisWeek, isPast, getDueStatus, fmtBR } from "../lib/dateUtils";
 import { callStudyPlan } from "../lib/aiService";
 
 interface GeralSectionProps {
@@ -48,9 +48,9 @@ export const GeralSection: React.FC<GeralSectionProps> = ({
   const provasHoje = provasAtivas.filter((p) => p.data === hoje);
   const reposicoesHoje = reposicoesAtivas.filter((r) => r.data === hoje);
 
-  const trabalhosSemana = trabalhosAtivos.filter((t) => isWithinNext7Days(t.dataEntrega));
-  const provasSemana = provasAtivas.filter((p) => isWithinNext7Days(p.data));
-  const reposicoesSemana = reposicoesAtivas.filter((r) => isWithinNext7Days(r.data));
+  const trabalhosSemana = trabalhosAtivos.filter((t) => isThisWeek(t.dataEntrega));
+  const provasSemana = provasAtivas.filter((p) => isThisWeek(p.data));
+  const reposicoesSemana = reposicoesAtivas.filter((r) => isThisWeek(r.data));
 
   const atrasosT = trabalhosAtivos.filter((t) => isPast(t.dataEntrega));
   const atrasosP = provasAtivas.filter((p) => isPast(p.data));
@@ -69,7 +69,7 @@ export const GeralSection: React.FC<GeralSectionProps> = ({
     ...trabalhosAtivos.map((t) => ({ type: "trabalho", id: t.id, titulo: t.titulo, data: t.dataEntrega, ref: t, discId: t.disciplinaId })),
     ...provasAtivas.map((p) => ({ type: "prova", id: p.id, titulo: p.titulo, data: p.data, ref: p, discId: p.disciplinaId })),
   ]
-    .filter((x) => isWithinNext7Days(x.data))
+    .filter((x) => isThisWeek(x.data))
     .sort((a, b) => a.data.localeCompare(b.data));
 
   // Compute Grade Averages
@@ -537,7 +537,7 @@ export const GeralSection: React.FC<GeralSectionProps> = ({
               targetTab: "calendario",
             })),
           ]
-            .filter((item) => isWithinNext7Days(item.data))
+            .filter((item) => isThisWeek(item.data))
             .sort((a, b) => a.data.localeCompare(b.data));
 
           if (allCompromissosSemana.length === 0) {

@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { AppData, Prova, FiltroTipo, QuizQuestion } from "../types";
-import { todayISO, isWithinNext7Days, isPast, getDueStatus, fmtBR } from "../lib/dateUtils";
+import { todayISO, isThisWeek, isPast, getDueStatus, fmtBR } from "../lib/dateUtils";
 import { callGenerateQuiz } from "../lib/aiService";
 
 interface ProvasSectionProps {
@@ -69,7 +69,7 @@ export const ProvasSection: React.FC<ProvasSectionProps> = ({
   // Apply Status Filter
   if (filter === "ativos") list = list.filter((p) => !p.concluido);
   if (filter === "hoje") list = list.filter((p) => !p.concluido && p.data === hoje);
-  if (filter === "7d") list = list.filter((p) => !p.concluido && isWithinNext7Days(p.data));
+  if (filter === "7d") list = list.filter((p) => !p.concluido && isThisWeek(p.data));
   if (filter === "atrasados") list = list.filter((p) => !p.concluido && isPast(p.data));
   if (filter === "concluidos") list = list.filter((p) => p.concluido);
 
@@ -154,7 +154,7 @@ export const ProvasSection: React.FC<ProvasSectionProps> = ({
           {[
             { id: "ativos", label: " Ativos" },
             { id: "hoje", label: "📍 Hoje" },
-            { id: "7d", label: "📅 7 Dias" },
+            { id: "7d", label: "📅 Esta Semana" },
             { id: "atrasados", label: "⛔ Passadas" },
             { id: "concluidos", label: "✅ Concluídas" },
             { id: "todos", label: "📋 Todas" },

@@ -19,11 +19,50 @@ export function diffDays(aISO: string, bISO: string): number {
   return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export function isWithinNext7Days(dateStr: string): boolean {
+/**
+ * Retorna os limites exatos da semana civil (Início: Domingo, Fim: Sábado)
+ * considerando o fuso horário local.
+ */
+export function getWeekBounds(refDateStr?: string): { startISO: string; endISO: string } {
+  const ref = refDateStr ? parseLocalDate(refDateStr) : parseLocalDate(todayISO());
+  ref.setHours(0, 0, 0, 0);
+  const dayOfWeek = ref.getDay(); // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+
+  // Domingo da semana
+  const start = new Date(ref);
+  start.setDate(ref.getDate() - dayOfWeek);
+
+  // Sábado da semana
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  const toISO = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  return {
+    startISO: toISO(start),
+    endISO: toISO(end),
+  };
+}
+
+/**
+ * Verifica se uma data ISO pertence à semana civil atual (Domingo a Sábado).
+ */
+export function isThisWeek(dateStr: string): boolean {
   if (!dateStr) return false;
-  const today = todayISO();
-  const d = diffDays(today, dateStr);
-  return d >= 0 && d <= 7;
+  const { startISO, endISO } = getWeekBounds();
+  return dateStr >= startISO && dateStr <= endISO;
+}
+
+/**
+ * Alias mantido para compatibilidade, utilizando a semana de Domingo a Sábado
+ */
+export function isWithinNext7Days(dateStr: string): boolean {
+  return isThisWeek(dateStr);
 }
 
 export function isPast(dateStr: string): boolean {
@@ -44,7 +83,9 @@ export function getDueStatus(iso: string): { label: string; type: "today" | "lat
 
   if (d === 0) return { label: "HOJE", type: "today", days: 0 };
   if (d < 0) return { label: `ATRASADO (${Math.abs(d)}d)`, type: "late", days: d };
-  if (d <= 7) return { label: `EM ${d} DIA(S)`, type: "due", days: d };
+  if (d === 1) return { label: "AMANHÃ", type: "due", days: 1 };
+  if (isThisWeek(iso)) return { label: `ESTA SEMANA (${d}d)`, type: "due", days: d };
+  if (d <= 7) return { label: `EM ${d} DIAS`, type: "normal", days: d };
   return { label: fmtBR(iso), type: "normal", days: d };
 }
 
@@ -59,3 +100,4 @@ export const DIAS_SEMANA = [
 ];
 
 export const DIAS_SEMANA_ABREV = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+

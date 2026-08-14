@@ -14,7 +14,7 @@ import {
   Award,
 } from "lucide-react";
 import { AppData, Trabalho, FiltroTipo } from "../types";
-import { todayISO, isWithinNext7Days, isPast, getDueStatus, fmtBR } from "../lib/dateUtils";
+import { todayISO, isThisWeek, isPast, getDueStatus, fmtBR } from "../lib/dateUtils";
 
 interface TrabalhosSectionProps {
   appData: AppData;
@@ -57,7 +57,7 @@ export const TrabalhosSection: React.FC<TrabalhosSectionProps> = ({
   // Apply Status Filter
   if (filter === "ativos") list = list.filter((t) => !t.concluido);
   if (filter === "hoje") list = list.filter((t) => !t.concluido && t.dataEntrega === hoje);
-  if (filter === "7d") list = list.filter((t) => !t.concluido && isWithinNext7Days(t.dataEntrega));
+  if (filter === "7d") list = list.filter((t) => !t.concluido && isThisWeek(t.dataEntrega));
   if (filter === "atrasados") list = list.filter((t) => !t.concluido && isPast(t.dataEntrega));
   if (filter === "concluidos") list = list.filter((t) => t.concluido);
 
@@ -117,7 +117,7 @@ export const TrabalhosSection: React.FC<TrabalhosSectionProps> = ({
           {[
             { id: "ativos", label: " Ativos" },
             { id: "hoje", label: "📍 Hoje" },
-            { id: "7d", label: "📅 7 Dias" },
+            { id: "7d", label: "📅 Esta Semana" },
             { id: "atrasados", label: "⛔ Atrasados" },
             { id: "concluidos", label: "✅ Concluídos" },
             { id: "todos", label: "📋 Todos" },
