@@ -30,11 +30,14 @@ export default function App() {
   const [appData, setAppData] = useState<AppData>(() => loadAppData());
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [currentTab, setCurrentTab] = useState<TabSection>("geral");
   const [searchQuery, setSearchQuery] = useState("");
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     return localStorage.getItem("academic_theme") === "dark";
   });
+
+  const isRemoteUpdateRef = React.useRef(false);
 
   // Firebase Auth listener
   useEffect(() => {
@@ -48,12 +51,32 @@ export default function App() {
   useEffect(() => {
     if (!currentUser) return;
 
+    let isFirstSnapshot = true;
     const unsubscribeDoc = subscribeUserDataFromFirestore(
       currentUser.uid,
       (remoteData) => {
+        isRemoteUpdateRef.current = true;
         setAppData(remoteData);
         saveAppData(remoteData);
         setLastSyncTime(new Date().toISOString());
+        if (isFirstSnapshot) {
+          showToast("☁️ Conectado ao Firebase. Dados em nuvem sincronizados!");
+          isFirstSnapshot = false;
+        }
+      },
+      () => {
+        // If document doesn't exist in Firestore yet, push the current local data to create it
+        console.log("Criando documento inicial do usuário no Firestore...");
+        setIsSyncing(true);
+        saveUserDataToFirestore(currentUser.uid, appData)
+          .then(() => {
+            setLastSyncTime(new Date().toISOString());
+            setIsSyncing(false);
+          })
+          .catch((err) => {
+            console.error("Erro ao inicializar dados no Firestore:", err);
+            setIsSyncing(false);
+          });
       },
       (err) => {
         console.error("Erro ao escutar Firestore:", err);
@@ -101,10 +124,18 @@ export default function App() {
     setAppData((prev) => {
       const next = updater(prev);
       saveAppData(next);
+
       if (currentUser) {
+        setIsSyncing(true);
         saveUserDataToFirestore(currentUser.uid, next)
-          .then(() => setLastSyncTime(new Date().toISOString()))
-          .catch((err) => console.error("Erro ao salvar no Firestore:", err));
+          .then(() => {
+            setLastSyncTime(new Date().toISOString());
+            setIsSyncing(false);
+          })
+          .catch((err) => {
+            console.error("Erro ao salvar no Firestore:", err);
+            setIsSyncing(false);
+          });
       }
       return next;
     });
@@ -133,10 +164,13 @@ export default function App() {
   const handleManualSync = async () => {
     if (currentUser) {
       try {
+        setIsSyncing(true);
         await saveUserDataToFirestore(currentUser.uid, appData);
         setLastSyncTime(new Date().toISOString());
+        setIsSyncing(false);
         showToast("Sincronização com o Firebase concluída!");
       } catch (err) {
+        setIsSyncing(false);
         showToast("Erro ao sincronizar com a nuvem.");
       }
     }
@@ -517,6 +551,8 @@ export default function App() {
           currentUser={currentUser}
           onLogin={handleLogin}
           onLogout={handleLogout}
+          isSyncing={isSyncing}
+          onManualSync={handleManualSync}
         />
 
         <main className="flex-1 px-3 sm:px-6 md:px-8 pt-4 pb-24 md:py-6 max-w-7xl w-full mx-auto min-w-0 overflow-x-hidden">

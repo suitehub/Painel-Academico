@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Plus, Sparkles, Flame, Moon, Sun, LogIn, LogOut, Cloud } from "lucide-react";
+import { Search, Plus, Sparkles, Flame, Moon, Sun, LogIn, LogOut, Cloud, RefreshCw } from "lucide-react";
 import { User } from "firebase/auth";
 import { TabSection } from "../types";
 
@@ -15,6 +15,8 @@ interface HeaderProps {
   currentUser?: User | null;
   onLogin?: () => void;
   onLogout?: () => void;
+  isSyncing?: boolean;
+  onManualSync?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -29,6 +31,8 @@ export const Header: React.FC<HeaderProps> = ({
   currentUser,
   onLogin,
   onLogout,
+  isSyncing,
+  onManualSync,
 }) => {
   const titles: Record<TabSection, { title: string; subtitle: string }> = {
     geral: { title: "🏠 Visão Geral Operacional", subtitle: "Resumo diário e próximos prazos" },
@@ -110,6 +114,20 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline max-w-[100px] truncate">
               {currentUser.displayName || currentUser.email || "Conectado"}
             </span>
+
+            {/* Sync spinner indicator */}
+            {isSyncing ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-600 dark:text-emerald-400" title="Sincronizando com Firestore..." />
+            ) : (
+              <button
+                onClick={onManualSync}
+                title="Sincronizar agora com a nuvem"
+                className="p-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-lg transition-colors text-emerald-700 dark:text-emerald-300"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+            )}
+
             <button
               onClick={onLogout}
               title="Sair da conta Google"

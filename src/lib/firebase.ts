@@ -184,11 +184,28 @@ export async function saveUserDataToFirestore(
   const path = `user_data/${userId}`;
   try {
     const userDocRef = doc(db, "user_data", userId);
-    await setDoc(userDocRef, {
-      userId,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    });
+    // Sanitize any undefined properties into null/omitted to ensure strict Firestore compliance
+    const sanitized = JSON.parse(
+      JSON.stringify(data, (_, v) => (v === undefined ? null : v))
+    );
+    await setDoc(
+      userDocRef,
+      {
+        userId,
+        disciplinas: sanitized.disciplinas || [],
+        aulas: sanitized.aulas || [],
+        trabalhos: sanitized.trabalhos || [],
+        provas: sanitized.provas || [],
+        ementas: sanitized.ementas || [],
+        horariosAulas: sanitized.horariosAulas || [],
+        reposicoes: sanitized.reposicoes || [],
+        eventos: sanitized.eventos || [],
+        arquivos: sanitized.arquivos || { horarios: null, calendario: null },
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    console.info("Firestore sincronizado com sucesso.");
   } catch (err) {
     handleFirestoreError(err, OperationType.WRITE, path);
   }
@@ -226,6 +243,7 @@ export async function loadUserDataFromFirestore(
 export function subscribeUserDataFromFirestore(
   userId: string,
   onUpdate: (data: AppData) => void,
+  onNotFound?: () => void,
   onError?: (err: any) => void
 ) {
   if (!isFirebaseConfigured || !db) return () => {};
@@ -247,6 +265,10 @@ export function subscribeUserDataFromFirestore(
           eventos: data.eventos || [],
           arquivos: data.arquivos || { horarios: null, calendario: null },
         });
+      } else {
+        if (onNotFound) {
+          onNotFound();
+        }
       }
     },
     (err) => {
