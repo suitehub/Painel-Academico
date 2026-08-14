@@ -314,6 +314,21 @@ export default function App() {
     showToast("Aula de reposição salva com sucesso!");
   };
 
+  const handleToggleReposicao = (id: number) => {
+    let nowDone = false;
+    updateAppData((prev) => {
+      const newReposicoes = (prev.reposicoes || []).map((r) => {
+        if (r.id === id) {
+          nowDone = !r.concluida;
+          return { ...r, concluida: nowDone };
+        }
+        return r;
+      });
+      return { ...prev, reposicoes: newReposicoes };
+    });
+    showToast(nowDone ? "Aula de reposição marcada como realizada! 🎉" : "Aula de reposição reaberta como pendente.");
+  };
+
   const handleDeleteReposicao = (id: number) => {
     updateAppData((prev) => ({
       ...prev,
@@ -650,6 +665,7 @@ export default function App() {
               onOpenQuickAdd={(type, payload) => openQuickAddModal(type as any, payload)}
               onToggleEvento={handleToggleEvento}
               onDeleteEvento={handleDeleteEvento}
+              onToggleReposicao={handleToggleReposicao}
             />
           )}
 
@@ -659,6 +675,7 @@ export default function App() {
               searchQuery={searchQuery}
               onSaveReposicao={handleSaveReposicao}
               onDeleteReposicao={handleDeleteReposicao}
+              onToggleReposicaoConcluida={handleToggleReposicao}
               onOpenModal={(type, payload) => openQuickAddModal(type, payload)}
             />
           )}

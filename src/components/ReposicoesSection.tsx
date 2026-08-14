@@ -18,22 +18,37 @@ import { todayISO, isWithinNext7Days, isPast, fmtBR } from "../lib/dateUtils";
 
 interface ReposicoesSectionProps {
   appData: AppData;
+  searchQuery?: string;
   onSaveReposicao: (r: AulaReposicao) => void;
   onDeleteReposicao: (id: number) => void;
-  onToggleReposicaoConcluida: (id: number) => void;
+  onToggleReposicaoConcluida?: (id: number) => void;
+  onOpenModal?: (type: "reposicao", payload?: any) => void;
 }
 
 export const ReposicoesSection: React.FC<ReposicoesSectionProps> = ({
   appData,
+  searchQuery = "",
   onSaveReposicao,
   onDeleteReposicao,
   onToggleReposicaoConcluida,
+  onOpenModal,
 }) => {
   const hoje = todayISO();
   const [filter, setFilter] = useState<FiltroTipo>("ativos");
-  const [search, setSearch] = useState("");
+  const [localSearch, setLocalSearch] = useState("");
   const [editingItem, setEditingItem] = useState<AulaReposicao | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const effectiveSearch = (searchQuery || localSearch).trim().toLowerCase();
+
+  const handleToggle = (item: AulaReposicao, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (onToggleReposicaoConcluida) {
+      onToggleReposicaoConcluida(item.id);
+    } else {
+      onSaveReposicao({ ...item, concluida: !item.concluida });
+    }
+  };
 
   // Form states
   const [disciplinaId, setDisciplinaId] = useState<number>(
@@ -92,9 +107,9 @@ export const ReposicoesSection: React.FC<ReposicoesSectionProps> = ({
     const disc = appData.disciplinas.find((d) => d.id === item.disciplinaId);
     const discNome = disc?.nome || "";
     const matchesSearch =
-      discNome.toLowerCase().includes(search.toLowerCase()) ||
-      (item.motivo || "").toLowerCase().includes(search.toLowerCase()) ||
-      (item.sala || "").toLowerCase().includes(search.toLowerCase());
+      discNome.toLowerCase().includes(effectiveSearch) ||
+      (item.motivo || "").toLowerCase().includes(effectiveSearch) ||
+      (item.sala || "").toLowerCase().includes(effectiveSearch);
 
     if (!matchesSearch) return false;
 
@@ -130,8 +145,8 @@ export const ReposicoesSection: React.FC<ReposicoesSectionProps> = ({
           </div>
 
           <button
-            onClick={() => handleOpenForm()}
-            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-sm shrink-0"
+            onClick={() => (onOpenModal ? onOpenModal("reposicao") : handleOpenForm())}
+            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-sm shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Agendar Reposição
@@ -146,8 +161,8 @@ export const ReposicoesSection: React.FC<ReposicoesSectionProps> = ({
             <input
               type="text"
               placeholder="Buscar por matéria, motivo..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500 font-medium"
             />
           </div>
@@ -395,16 +410,16 @@ export const ReposicoesSection: React.FC<ReposicoesSectionProps> = ({
                 {/* Footer Controls */}
                 <div className="flex items-center justify-between pt-1">
                   <button
-                    onClick={() => onToggleReposicaoConcluida(item.id)}
-                    className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg transition-colors ${
+                    onClick={(e) => handleToggle(item, e)}
+                    className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
                       item.concluida
-                        ? "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                        : "text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50/80 dark:bg-emerald-950/40 hover:bg-emerald-100"
+                        : "text-slate-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200"
                     }`}
                   >
                     {item.concluida ? (
                       <>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 fill-emerald-500/20" />
                         <span>Realizada</span>
                       </>
                     ) : (
@@ -417,15 +432,15 @@ export const ReposicoesSection: React.FC<ReposicoesSectionProps> = ({
 
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => handleOpenForm(item)}
-                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                      onClick={() => (onOpenModal ? onOpenModal("reposicao", item) : handleOpenForm(item))}
+                      className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                       title="Editar"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onDeleteReposicao(item.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                       title="Excluir"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
