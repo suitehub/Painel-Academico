@@ -7,7 +7,7 @@ interface EmentasSectionProps {
   appData: AppData;
   onSaveEmenta: (e: Ementa) => void;
   onDeleteEmenta: (id: number) => void;
-  onOpenModal: (type: "ementa") => void;
+  onOpenModal: (type: "ementa", payload?: any) => void;
 }
 
 export const EmentasSection: React.FC<EmentasSectionProps> = ({
@@ -123,9 +123,9 @@ export const EmentasSection: React.FC<EmentasSectionProps> = ({
 
                     <div className="flex items-center gap-1 shrink-0 ml-auto sm:ml-0">
                       <button
-                        onClick={() => handleRename(item)}
+                        onClick={() => onOpenModal("ementa", item)}
                         className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                        title="Renomear"
+                        title="Editar / Substituir"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>

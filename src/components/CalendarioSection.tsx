@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Calendar as CalendarIcon, Upload, FileText, ExternalLink, Download, ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle2, Clock } from "lucide-react";
+import { Calendar as CalendarIcon, Upload, FileText, ExternalLink, Download, ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle2, Clock, Edit2 } from "lucide-react";
 import { AppData, EventoCalendario } from "../types";
 import { idbSet, idbGet, idbDel, generateUid } from "../lib/idb";
 import { fmtBR, parseLocalDate } from "../lib/dateUtils";
@@ -459,6 +459,15 @@ export const CalendarioSection: React.FC<CalendarioSectionProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0">
+                    {onOpenQuickAdd && (
+                      <button
+                        onClick={() => onOpenQuickAdd("evento", ev)}
+                        className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        title="Editar evento"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    )}
                     {onToggleEvento && (
                       <button
                         onClick={() => onToggleEvento(ev.id)}

@@ -604,7 +604,7 @@ export default function App() {
               appData={appData}
               onSaveEmenta={handleSaveEmenta}
               onDeleteEmenta={handleDeleteEmenta}
-              onOpenModal={(type) => openQuickAddModal(type)}
+              onOpenModal={(type, payload) => openQuickAddModal(type, payload)}
             />
           )}
 

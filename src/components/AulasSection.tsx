@@ -274,21 +274,31 @@ export const AulasSection: React.FC<AulasSectionProps> = ({
                               onClick={() => setActiveAulaId(isOpen ? null : a.id)}
                               className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
                             >
-                              {isOpen ? "Fechar" : "Editar / Ver"}
+                              {isOpen ? "Fechar" : "Anotações"}
                             </button>
                           </div>
 
-                          <button
-                            onClick={() => {
-                              if (confirm(`Excluir a aula "${a.titulo}"?`)) {
-                                onDeleteAula(a.id);
-                              }
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0 ml-auto sm:ml-0"
-                            title="Excluir"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-1 shrink-0 ml-auto sm:ml-0">
+                            <button
+                              onClick={() => onOpenModal("aula", a)}
+                              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                              title="Editar Aula / Título"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                if (confirm(`Excluir a aula "${a.titulo}"?`)) {
+                                  onDeleteAula(a.id);
+                                }
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
 
